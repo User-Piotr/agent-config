@@ -109,8 +109,9 @@ step "Headroom and skills"
 # machine-local parts to settings.local.json, which stays untracked.
 command -v headroom  >/dev/null || uv tool install headroom-ai
 command -v graphify  >/dev/null || { uv tool install graphifyy && graphify install --platform claude; }
-# No options: `headroom init claude` takes none as of headroom 0.37.0.
-headroom init claude
+# --global belongs to `init`, not to `claude`: click puts group options before
+# the subcommand, so `headroom init claude --global` fails with "No such option".
+headroom init --global claude
 log "verify with: headroom doctor"
 
 step "Done"
