@@ -1,0 +1,48 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "model": "opus",
+  "effortLevel": "high",
+  "modelSettings": {
+    "claude-opus-5": {
+      "effortLevel": "high"
+    }
+  },
+  "theme": "dark-daltonized",
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true"
+  },
+  "disableClaudeAiConnectors": true,
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-statusline.sh\""
+  },
+  "enabledPlugins": {
+    "caveman@caveman": true
+  },
+  "extraKnownMarketplaces": {
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    }
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/block-mutations.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}
