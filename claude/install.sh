@@ -69,7 +69,12 @@ if [ -n "${CONTEXT7_API_KEY:-}" ]; then
     \"args\": [\"-y\", \"@upstash/context7-mcp\", \"--api-key\", \"$CONTEXT7_API_KEY\"]
   }"
 else
-  log "context7 skipped — set CONTEXT7_API_KEY in .env"
+  # Already registered is the normal case on a machine that has been set up;
+  # only a first install actually needs the key.
+  case "$INSTALLED" in
+    *"context7:"*) log "context7 present" ;;
+    *)             log "context7 skipped — set CONTEXT7_API_KEY in .env" ;;
+  esac
 fi
 
 step "Global gitignore"
@@ -104,7 +109,8 @@ step "Headroom and skills"
 # machine-local parts to settings.local.json, which stays untracked.
 command -v headroom  >/dev/null || uv tool install headroom-ai
 command -v graphify  >/dev/null || { uv tool install graphifyy && graphify install --platform claude; }
-headroom init claude --global
+# No options: `headroom init claude` takes none as of headroom 0.37.0.
+headroom init claude
 log "verify with: headroom doctor"
 
 step "Done"
