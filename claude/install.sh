@@ -24,9 +24,12 @@ link() {
 step "Linking config"
 link "$CONF_DIR/CLAUDE.md"                 CLAUDE.md
 link "$CONF_DIR/settings.json"             settings.json
-link "$CONF_DIR/scripts/block-mutations.sh" scripts/block-mutations.sh
 for f in "$CONF_DIR"/agents/*.md; do
   link "$f" "agents/$(basename "$f")"
+done
+for f in "$CONF_DIR"/scripts/*.sh; do
+  link "$f" "scripts/$(basename "$f")"
+  chmod +x "$f"
 done
 
 step "Statusline"
