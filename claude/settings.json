@@ -1,65 +1,14 @@
 {
+  "env": {
+    "ENABLE_TOOL_SEARCH": "true"
+  },
   "attribution": {
     "commit": "",
     "pr": "",
     "sessionUrl": false
   },
-  "agent": "devops",
   "model": "opus",
-  "effortLevel": "high",
-  "modelSettings": {
-    "claude-opus-5": {
-      "effortLevel": "high"
-    }
-  },
-  "theme": "dark-daltonized",
-  "env": {
-    "ENABLE_TOOL_SEARCH": "true"
-  },
   "disableClaudeAiConnectors": true,
-  "sandbox": {
-    "enabled": true,
-    "autoAllowBashIfSandboxed": true,
-    "filesystem": {
-      "allowWrite": [
-        "~/.kube",
-        "~/.aws",
-        "~/.terraform.d",
-        "~/.cache",
-        "~/.local/state"
-      ]
-    },
-    "network": {
-      "allowedDomains": [
-        "registry.terraform.io",
-        "releases.hashicorp.com",
-        "*.amazonaws.com",
-        "github.com",
-        "api.github.com",
-        "codeload.github.com",
-        "objects.githubusercontent.com",
-        "raw.githubusercontent.com",
-        "registry.npmjs.org",
-        "pypi.org",
-        "files.pythonhosted.org"
-      ]
-    }
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-statusline.sh\""
-  },
-  "enabledPlugins": {
-    "caveman@caveman": true
-  },
-  "extraKnownMarketplaces": {
-    "caveman": {
-      "source": {
-        "source": "github",
-        "repo": "JuliusBrussee/caveman"
-      }
-    }
-  },
   "hooks": {
     "PreToolUse": [
       {
@@ -96,5 +45,62 @@
         ]
       }
     ]
-  }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-statusline.sh\""
+  },
+  "enabledPlugins": {
+    "caveman@caveman": true
+  },
+  "extraKnownMarketplaces": {
+    "caveman": {
+      "source": {
+        "source": "github",
+        "repo": "JuliusBrussee/caveman"
+      }
+    },
+    "headroom-marketplace": {
+      "source": {
+        "source": "github",
+        "repo": "chopratejas/headroom"
+      }
+    }
+  },
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "network": {
+      "allowedDomains": [
+        "registry.terraform.io",
+        "releases.hashicorp.com",
+        "*.amazonaws.com",
+        "github.com",
+        "api.github.com",
+        "codeload.github.com",
+        "objects.githubusercontent.com",
+        "raw.githubusercontent.com",
+        "registry.npmjs.org",
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    },
+    "filesystem": {
+      "allowWrite": [
+        "~/.kube",
+        "~/.aws",
+        "~/.terraform.d",
+        "~/.cache",
+        "~/.local/state"
+      ]
+    }
+  },
+  "effortLevel": "high",
+  "modelSettings": {
+    "claude-opus-5": {
+      "effortLevel": "high"
+    }
+  },
+  "agent": "devops",
+  "theme": "dark-daltonized"
 }
