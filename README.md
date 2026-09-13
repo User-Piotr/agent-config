@@ -18,7 +18,7 @@ claude/
   install.sh         links this directory into ~/.claude
   settings.json      model, theme, hooks, plugins
   CLAUDE.md          global instructions
-  agents/            devops, devops-implementer, troubleshooter
+  agents/            devops, devops-implementer, troubleshooter, devops-reviewer
   scripts/           the PreToolUse guard and the two learnings hooks
 ```
 

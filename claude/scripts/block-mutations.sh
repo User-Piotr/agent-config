@@ -29,7 +29,7 @@
 # with `--agent devops` would also carry agent_type — and that should
 # still count as the interactive case. Add a name here if you introduce
 # another headless subagent later.
-HEADLESS_AGENTS=("devops-implementer" "troubleshooter")
+HEADLESS_AGENTS=("devops-implementer" "troubleshooter" "devops-reviewer")
 #
 # Dry-run / template / lint / diff / plan forms are still always
 # allowed outright (no ask, no deny) — see the DRY_RUN check below.
