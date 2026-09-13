@@ -19,8 +19,12 @@ claude/
   settings.json      model, theme, hooks, plugins
   CLAUDE.md          global instructions
   agents/            devops, devops-implementer, troubleshooter
-  scripts/           block-mutations.sh, the PreToolUse guard
+  scripts/           the PreToolUse guard and the two learnings hooks
 ```
+
+`settings.json` sets `"agent": "devops"`, so every session starts as that
+subagent — its prompt replaces the default one entirely. Drop the key to get a
+stock session back, or override it per repository in `.claude/settings.local.json`.
 
 Everything is symlinked, so changes flow both ways: edit the repo and Claude
 Code picks it up next session; change something through `/config` or a plugin
@@ -37,4 +41,6 @@ denied outright for headless subagents, which cannot answer a prompt. Its header
 comment has the exact categories. Text matching, not a shell parser — keep
 least-privilege credentials behind it.
 
-Needs `bash`, `jq`, `git`, `uv`, `node`, and the `claude` CLI on `PATH`.
+Needs `bash`, `jq`, `git`, `uv`, `node`, and the `claude` CLI on `PATH`. The
+Bash sandbox `settings.json` turns on also needs `bubblewrap` and `socat`;
+without them Claude Code warns once and runs commands unsandboxed.

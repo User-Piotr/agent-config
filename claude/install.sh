@@ -72,6 +72,32 @@ else
   log "context7 skipped — set CONTEXT7_API_KEY in .env"
 fi
 
+step "Global gitignore"
+# Claude Code drops machine-local files next to whatever repository it runs
+# in. Ignoring them once here beats editing .gitignore in every work tree.
+IGNORE="$(git config --global core.excludesFile 2>/dev/null || true)"
+IGNORE="${IGNORE/#\~/$HOME}"
+[ -n "$IGNORE" ] || IGNORE="${XDG_CONFIG_HOME:-$HOME/.config}/git/ignore"
+mkdir -p "$(dirname "$IGNORE")"
+for pat in '.claude/settings.local.json' '.claude/agent-memory-local/'; do
+  grep -qxF "$pat" "$IGNORE" 2>/dev/null || { printf '%s\n' "$pat" >> "$IGNORE"; log "$pat"; }
+done
+log "in $IGNORE"
+
+step "Sandbox dependencies"
+# settings.json enables the Bash sandbox, which needs bubblewrap for
+# filesystem isolation and socat to relay network traffic. Without both,
+# `sandbox.enabled` is a no-op: Claude Code warns once and runs commands
+# unsandboxed. Not installed here because it needs root.
+MISSING=""
+for b in bwrap socat; do command -v "$b" >/dev/null 2>&1 || MISSING="$MISSING $b"; done
+if [ -n "$MISSING" ]; then
+  log "missing:$MISSING"
+  log "install with: sudo apt-get install$MISSING"
+else
+  log "bubblewrap and socat present"
+fi
+
 step "Headroom and skills"
 # `headroom init claude` owns its whole integration: the MCP entry, the
 # ANTHROPIC_BASE_URL routing, and the SessionStart selfheal hook. It writes the

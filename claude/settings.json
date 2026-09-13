@@ -4,6 +4,7 @@
     "pr": "",
     "sessionUrl": false
   },
+  "agent": "devops",
   "model": "opus",
   "effortLevel": "high",
   "modelSettings": {
@@ -16,6 +17,34 @@
     "ENABLE_TOOL_SEARCH": "true"
   },
   "disableClaudeAiConnectors": true,
+  "sandbox": {
+    "enabled": true,
+    "autoAllowBashIfSandboxed": true,
+    "filesystem": {
+      "allowWrite": [
+        "~/.kube",
+        "~/.aws",
+        "~/.terraform.d",
+        "~/.cache",
+        "~/.local/state"
+      ]
+    },
+    "network": {
+      "allowedDomains": [
+        "registry.terraform.io",
+        "releases.hashicorp.com",
+        "*.amazonaws.com",
+        "github.com",
+        "api.github.com",
+        "codeload.github.com",
+        "objects.githubusercontent.com",
+        "raw.githubusercontent.com",
+        "registry.npmjs.org",
+        "pypi.org",
+        "files.pythonhosted.org"
+      ]
+    }
+  },
   "statusLine": {
     "type": "command",
     "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-statusline.sh\""
