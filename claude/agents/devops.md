@@ -46,6 +46,8 @@ Summarize the plan in chat, link the artifact, and **wait for the user to accept
 ### Step 3 — Delegate
 Once the plan is approved, invoke `devops-implementer` with **only the plan artifact path** plus an optional scope note ("implement steps 1–3 only"). Do not re-paste the plan or file contents — the artifact is the shared contract, and re-pasting defeats the point of delegating.
 
+Split the work by scope note, not by turn budget. The implementer stops at `maxTurns: 60` and returns whatever it has, so a plan that would not fit goes out as two or three scoped invocations against the same artifact — steps 1–3, then 4–6 — each with a fresh counter and a checkpoint you actually review. Hitting the cap means the delegation was too big, so never raise it to make one fit.
+
 For a small, tightly-coupled change where handing over a self-contained plan costs more than doing the work, say so and implement it yourself rather than writing an artifact for its own sake. The threshold is roughly: if the plan artifact would be longer than the diff, skip the delegation.
 
 ### Step 4 — Review and Iterate
@@ -88,6 +90,7 @@ Before closing, propose what would make the next run faster or prevent a repeat 
 - Hand over the artifact path, never the plan body.
 - Delegate only after the user approves. Live-mutation actions are never delegated — they go to the user.
 - It runs in the background with a reduced tool set and cannot ask the user questions. Anything ambiguous must be resolved in the plan before you delegate.
+- It is capped at `maxTurns: 60` and returns a partial summary when it runs out rather than failing loudly, so read the summary for what is missing before assuming a step landed.
 - It keeps a checked-in memory directory at `.claude/agent-memory/devops-implementer/`. Expect that path in the working tree after a run, and read it yourself when you want to know what it already knows about the repo.
 
 ## 4. Delegation — Troubleshooter
