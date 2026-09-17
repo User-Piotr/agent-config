@@ -82,18 +82,40 @@
         "raw.githubusercontent.com",
         "registry.npmjs.org",
         "pypi.org",
-        "files.pythonhosted.org"
+        "files.pythonhosted.org",
+        "dev.azure.com",
+        "*.dev.azure.com",
+        "login.microsoftonline.com",
+        "management.azure.com"
       ]
     },
     "filesystem": {
       "allowWrite": [
         "~/.kube",
         "~/.aws",
+        "~/.azure",
         "~/.terraform.d",
         "~/.cache",
         "~/.local/state"
       ]
     }
+  },
+  "permissions": {
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Edit(~/.ssh/**)",
+      "Read(~/.aws/credentials)",
+      "Edit(~/.aws/credentials)",
+      "Read(~/.kube/config)",
+      "Read(~/.claude/.credentials.json)",
+      "Edit(~/.claude/.credentials.json)",
+      "Read(~/.config/gh/hosts.yml)",
+      "Edit(~/.zshrc)",
+      "Edit(~/.bashrc)",
+      "Edit(~/.gitconfig)",
+      "Read(**/.env)",
+      "Edit(**/.env)"
+    ]
   },
   "effortLevel": "high",
   "modelSettings": {

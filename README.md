@@ -41,6 +41,16 @@ denied outright for headless subagents, which cannot answer a prompt. Its header
 comment has the exact categories. Text matching, not a shell parser — keep
 least-privilege credentials behind it.
 
-Needs `bash`, `jq`, `git`, `uv`, `node`, and the `claude` CLI on `PATH`. The
-Bash sandbox `settings.json` turns on also needs `bubblewrap` and `socat`;
-without them Claude Code warns once and runs commands unsandboxed.
+Two layers, not one. The sandbox bounds **Bash** only — writes to the working
+tree, reads everywhere but the denied paths. The `Read` and `Write` tools go
+through `permissions` instead, so a sandbox denial on a path says nothing about
+whether Claude can edit that path with a tool. The `permissions.deny` list is
+what covers credentials, shell rc files and `.env`. Claude Code consults only
+`Read(...)` and `Edit(...)` path rules; a `Write(...)` or `MultiEdit(...)` rule
+is accepted and then ignored, with a warning at startup. `Edit` covers `Write`
+and `NotebookEdit` too.
+
+Needs `bash`, `jq`, `git`, `uv`, `node`, and the `claude` CLI on `PATH`. On
+Linux and WSL2 the Bash sandbox also needs `bubblewrap` and `socat`, or Claude
+Code warns once and runs commands unsandboxed; macOS needs neither, since
+Seatbelt is part of the OS.
