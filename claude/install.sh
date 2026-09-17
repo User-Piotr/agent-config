@@ -37,7 +37,12 @@ step "Statusline"
 # go stale. The plugin's own installer uses this same destination.
 src=$(find "$CLAUDE_HOME/plugins/cache/caveman" -name caveman-statusline.sh -print -quit 2>/dev/null || true)
 if [ -n "$src" ]; then
-  install -Dm755 "$src" "$CLAUDE_HOME/hooks/caveman-statusline.sh"
+  # cp, not `install -D`: -D is GNU-only, and BSD install on macOS fails with
+  # "No such file or directory" on its own temp file when the target directory
+  # does not exist yet.
+  mkdir -p "$CLAUDE_HOME/hooks"
+  cp "$src" "$CLAUDE_HOME/hooks/caveman-statusline.sh"
+  chmod 755 "$CLAUDE_HOME/hooks/caveman-statusline.sh"
   log "from $src"
 else
   log "caveman plugin not cloned yet — rerun after Claude Code restarts"
@@ -90,17 +95,22 @@ done
 log "in $IGNORE"
 
 step "Sandbox dependencies"
-# settings.json enables the Bash sandbox, which needs bubblewrap for
-# filesystem isolation and socat to relay network traffic. Without both,
-# `sandbox.enabled` is a no-op: Claude Code warns once and runs commands
-# unsandboxed. Not installed here because it needs root.
-MISSING=""
-for b in bwrap socat; do command -v "$b" >/dev/null 2>&1 || MISSING="$MISSING $b"; done
-if [ -n "$MISSING" ]; then
-  log "missing:$MISSING"
-  log "install with: sudo apt-get install$MISSING"
+# settings.json enables the Bash sandbox. On macOS it needs nothing — Seatbelt
+# is part of the OS. On Linux and WSL2 it needs bubblewrap for filesystem
+# isolation and socat to relay network traffic; without both, `sandbox.enabled`
+# is a no-op and Claude Code warns once, then runs commands unsandboxed.
+# Not installed here because it needs root.
+if [ "$(uname -s)" = "Darwin" ]; then
+  log "macOS: Seatbelt is built in, nothing to install"
 else
-  log "bubblewrap and socat present"
+  MISSING=""
+  for b in bwrap socat; do command -v "$b" >/dev/null 2>&1 || MISSING="$MISSING $b"; done
+  if [ -n "$MISSING" ]; then
+    log "missing:$MISSING"
+    log "install with: sudo apt-get install$MISSING"
+  else
+    log "bubblewrap and socat present"
+  fi
 fi
 
 step "Headroom and skills"
