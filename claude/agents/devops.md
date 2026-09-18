@@ -75,11 +75,14 @@ Give the user what they need to finish:
 Before closing, propose what would make the next run faster or prevent a repeat mistake — as a draft for the user to review, never a direct edit to `CLAUDE.md`.
 
 - **What**: verified commands with their exact path/context; conventions and patterns confirmed this session; gotchas and how they were resolved; a short imperative rule whenever you or a subagent did something that should not happen again.
+- **Record what will save the next person time, not what surprised you.** A fact earns a place in durable memory only if someone could meet it again. Something already fixed at its source — a permission now baked into a shared module, a bug patched upstream — is history and belongs in the pull request, not in `AGENTS.md`. An aphorism with no handle on it ("X is not always Y") is not a fact; keep the concrete instance instead.
+- **Correcting a false line outranks adding a true one.** Durable memory is trusted, so a wrong entry costs more than a missing one — it sends people down a path that does not exist. Before appending, read what the section already claims and check it still holds.
+- **The section has a ceiling.** Keep it under roughly 20 bullets — one screen, read in full before every task. Once it is full, an addition is a replacement: name the weakest existing line and propose deleting it in the same entry. A section nobody finishes reading protects nobody.
 - **Where**: append a dated entry to `.claude/claude-md-review.md` in the target repo, creating it if missing. Never write to `CLAUDE.md` or `AGENTS.md` directly — proposals sit in the review file until the user applies them.
 - **Language and length**: English, one line per bullet. A bullet states the fact and, where it is not obvious, the consequence — it is not a paragraph. The review file is a staging area for text that will be pasted verbatim into the target file, so it must already read like the target file.
 - **Format**: for each proposed change, write the exact bullet(s) to add, edit, or remove, targeted at `CLAUDE.md`'s `## DevOps Conventions (agent-maintained)` section (creating that section if missing when the user applies it) — worded so the user can paste it straight in with minimal editing. Where a repo keeps its canonical instructions in `AGENTS.md`, note that `CLAUDE.md` needs an `@AGENTS.md` import at the top before that section, since Claude Code loads `CLAUDE.md`, not `AGENTS.md`.
 - **How**: fold in the implementer's returned Learnings and the troubleshooter's, plus your own review findings, into the same dated entry. Check the file's existing unreviewed proposals first — merge with a matching one rather than duplicating it, and note when a new proposal supersedes an older pending one.
-- Skip only for trivial tasks that produced no new knowledge, and say so explicitly rather than omitting it silently.
+- Proposing nothing is the normal outcome, not a failure. Most sessions apply knowledge rather than produce it. Say in one line that there was nothing durable, and stop — a section that grows every session is a changelog, and nobody reads a changelog before running `terraform plan`.
 
 ---
 

@@ -85,6 +85,13 @@ a human can paste the bullets in unedited:
 - gotchas and how they were resolved
 - one short imperative rule for anything that should not happen again
 
+A fact belongs here only if someone could meet it again. Something already
+fixed at its source is history: leave it in the pull request. Correcting a line
+that is now false outranks adding a true one, so read what the section already
+claims and flag anything the session proved wrong. The section has a ceiling of
+roughly 20 bullets; once it is full, name the weakest line to drop alongside
+whatever you add.
+
 Write English, one line per bullet, no paragraphs. Read AGENTS.md and CLAUDE.md
 first and skip whatever they already say. Skip preferences and corrections
 about how the user likes to work — those belong to auto memory, not here. Merge
