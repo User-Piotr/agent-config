@@ -97,8 +97,17 @@ nothing at all and say that instead.
 EOF
 
 cd "$REPO" || exit 0
+# --agent pins what this child runs as. Without it the child inherits the
+# `agent` key from settings.json, so it would boot with the devops prompt —
+# an orchestrator told to plan infrastructure and delegate, which is the wrong
+# system prompt for summarising a transcript. Defined inline so there is no
+# extra agent file to install.
+AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session transcript into a dated proposal for repository agent memory.","prompt":"You read a condensed Claude Code session transcript and write a dated proposal for the repository agent memory of that session. You edit one file and report nothing else. Follow the instructions in the prompt exactly."}}'
+
 CLAUDE_LEARNINGS_CHILD=1 nohup claude -p "$PROMPT" \
   --model sonnet \
+  --agents "$AGENT_JSON" \
+  --agent learnings-writer \
   --allowed-tools Read Grep Glob Edit Write \
   >>"$STATE/learnings.log" 2>&1 &
 disown 2>/dev/null || true
