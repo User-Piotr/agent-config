@@ -10,7 +10,7 @@ Read this when Step 6 of `devops.md` has found something worth recording. It hol
 
 ## Where the draft goes
 
-Append a dated entry to `.claude/claude-md-review.md` in the target repo, newest first, creating the file with a short header if it does not exist. Proposals sit in the review file until the user applies them.
+Add a dated entry at the top of `.claude/claude-md-review.md` in the target repo — newest first, directly under the file's `#` title — creating the file with that title if it does not exist. Proposals sit in the review file until the user applies them.
 
 The heading format is a contract, not a style: `## YYYY-MM-DD — short title`. A `SessionStart` hook counts headings that do not carry the word `APPLIED` and raises them in the next session in this repository. Write a heading in any other shape and that count silently reads zero — the proposal is then in the file and reminds nobody. When the user applies an entry, append ` — APPLIED` to its heading rather than deleting it.
 

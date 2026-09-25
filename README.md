@@ -42,8 +42,8 @@ A **new** file is the exception: rerun `./install.sh` after adding an agent,
 skill, script or doc, or it silently does not exist.
 
 Machine-local state stays out of the repo. `install.sh` adds
-`settings.local.json`, agent memory and Headroom's wrap files to the global
-gitignore; API keys live in `.env`, which is ignored too.
+`settings.local.json`, agent memory, Headroom's wrap files and the learnings
+review file to the global gitignore; API keys live in `.env`, ignored too.
 
 ## Safety
 
@@ -53,8 +53,10 @@ gitignore; API keys live in `.env`, which is ignored too.
   prompt. It matches text: `./deploy.sh` or `make apply` pass unseen, so keep
   least-privilege credentials behind it where you can.
 - `block-mcp-mutations.sh` does the same for MCP tools, judged by tool name.
-- Both log each decision to `~/.claude/logs/`, recording only the first word of
-  a command, never the full line.
+- Both log each decision to `~/.claude/logs/`, recording the judged binary or
+  tool name, never the full command line.
+- `bash claude/tests/guards.sh` runs both guards against a table of real
+  command shapes. Run it after touching either script.
 
 The sandbox and `permissions` are separate, but coupled in one direction: a
 `Read(...)` rule in `permissions.deny` also blocks that path inside the Bash
