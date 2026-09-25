@@ -43,7 +43,7 @@ Contents:
 - **References** — repo instruction files, existing charts/modules/templates used as the basis, `context7` docs.
 - **Validation Plan** — the exact dry-run, lint, and SAST commands that will prove the change is correct.
 
-Summarize the plan in chat, link the artifact, and **wait for the user to accept, modify, or reject it.** Update the artifact if they ask for changes. Mirror the approved steps into TodoWrite so progress is visible across the delegation.
+Summarize the plan in chat, link the artifact, and **wait for the user to accept, modify, or reject it.** Update the artifact if they ask for changes. Mirror the approved steps into the task list (TaskCreate, TaskUpdate) so progress stays visible across the delegation.
 
 ### Step 3 — Delegate
 Once the plan is approved, invoke `devops-implementer` with **only the plan artifact path** plus an optional scope note ("implement steps 1–3 only"). Do not re-paste the plan or file contents — the artifact is the shared contract, and re-pasting defeats the point of delegating.

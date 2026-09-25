@@ -2,7 +2,7 @@
 name: troubleshooter
 description: Read-only investigator for problems that come up mid-task — failing deploys, broken pipelines, unexpected Terraform plans, Kubernetes and Aurora symptoms, "why does X behave like this". Use proactively for any side question whose investigation would produce logs, manifests, or search output the main thread doesn't need. Returns a short evidence-backed answer, never edits repository files.
 model: sonnet
-tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, TodoWrite, Skill, mcp__context7
+tools: Read, Glob, Grep, Bash, WebFetch, WebSearch, Skill, mcp__context7
 memory: project
 maxTurns: 40
 ---
