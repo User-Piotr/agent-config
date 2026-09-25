@@ -2,6 +2,7 @@
 # Install this directory's Claude Code configuration into ~/.claude.
 # See ../README.md for what lands where and why.
 set -euo pipefail
+shopt -s nullglob   # an empty directory must skip its loop, not link a literal glob
 
 CONF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_HOME="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
@@ -30,6 +31,12 @@ done
 for f in "$CONF_DIR"/scripts/*.sh; do
   link "$f" "scripts/$(basename "$f")"
   chmod +x "$f"
+done
+for f in "$CONF_DIR"/docs/*.md; do
+  link "$f" "docs/$(basename "$f")"
+done
+for d in "$CONF_DIR"/skills/*/; do
+  link "${d%/}" "skills/$(basename "$d")"
 done
 
 step "Statusline"
@@ -89,7 +96,7 @@ IGNORE="$(git config --global core.excludesFile 2>/dev/null || true)"
 IGNORE="${IGNORE/#\~/$HOME}"
 [ -n "$IGNORE" ] || IGNORE="${XDG_CONFIG_HOME:-$HOME/.config}/git/ignore"
 mkdir -p "$(dirname "$IGNORE")"
-for pat in '.claude/settings.local.json' '.claude/agent-memory-local/'; do
+for pat in '.claude/settings.local.json' '.claude/agent-memory/' '.claude/.headroom_wrap_*'; do
   grep -qxF "$pat" "$IGNORE" 2>/dev/null || { printf '%s\n' "$pat" >> "$IGNORE"; log "$pat"; }
 done
 log "in $IGNORE"
