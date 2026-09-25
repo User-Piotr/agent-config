@@ -50,6 +50,11 @@ REPO="$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null)"
 STATE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/logs"
 mkdir -p "$STATE/digests" || exit 0
 
+# A digest holds prompts and full shell commands, which is exactly what the
+# guard logs avoid recording. Each one is deleted once its child finishes;
+# this sweeps up whatever a crashed or killed child left behind.
+find "$STATE/digests" -type f -name '*.txt' -mtime +2 -delete 2>/dev/null
+
 POLICY="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/docs/learnings.md"
 if [[ ! -f "$POLICY" ]]; then
   echo "learnings-queue: $POLICY missing, run install.sh" >>"$STATE/learnings.log"
@@ -111,11 +116,21 @@ cd "$REPO" || exit 0
 # extra agent file to install.
 AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session transcript into a dated proposal for repository agent memory.","prompt":"You read a condensed Claude Code session transcript and write a dated proposal for the repository agent memory of that session. You edit one file and report nothing else. Follow the instructions in the prompt exactly."}}'
 
-CLAUDE_LEARNINGS_CHILD=1 nohup claude -p "$PROMPT" \
-  --model sonnet \
-  --agents "$AGENT_JSON" \
-  --agent learnings-writer \
-  --allowed-tools Read Grep Glob Edit Write \
-  >>"$STATE/learnings.log" 2>&1 &
+# --allowed-tools only pre-approves; it removes nothing. The digest carries
+# tool error text from the session, which is untrusted input, and settings.json
+# auto-allows sandboxed Bash — so without --disallowed-tools the child could
+# run commands a transcript talked it into. It needs to read and edit one file.
+(
+  # nohup's job: closing the terminal right after the session must not kill
+  # the child mid-write. An ignored signal is inherited across exec.
+  trap '' HUP
+  CLAUDE_LEARNINGS_CHILD=1 claude -p "$PROMPT" \
+    --model sonnet \
+    --agents "$AGENT_JSON" \
+    --agent learnings-writer \
+    --allowed-tools Read Grep Glob Edit Write \
+    --disallowed-tools Bash WebFetch WebSearch NotebookEdit
+  rm -f "$DIGEST"
+) >>"$STATE/learnings.log" 2>&1 </dev/null &
 disown 2>/dev/null || true
 exit 0
