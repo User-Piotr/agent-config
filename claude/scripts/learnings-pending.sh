@@ -24,8 +24,10 @@ REVIEW="$REPO/.claude/claude-md-review.md"
 [[ -f "$REVIEW" ]] || exit 0
 
 # Entry headings look like `## 2026-09-12 — title`; applied ones carry APPLIED.
-PENDING="$(grep '^## ' "$REVIEW" 2>/dev/null | grep -vc 'APPLIED')" || PENDING=0
+# Count only DATED headings: a file titled `## Proposed learnings` would
+# otherwise read as one pending entry forever, a reminder nobody can clear.
+PENDING="$(grep -E '^## [0-9]{4}-[0-9]{2}-[0-9]{2}' "$REVIEW" 2>/dev/null | grep -vc 'APPLIED')" || PENDING=0
 [[ "$PENDING" -gt 0 ]] || exit 0
 
-printf '%s unapplied learnings proposal(s) sit in .claude/claude-md-review.md, queued by earlier sessions in this repository. Nothing there is in effect until a human moves it into AGENTS.md. Raise them when the current task reaches a natural pause — summarise each in a line and ask whether to apply, edit, or drop it. Do not apply them unprompted.\n' "$PENDING"
+printf '%s unapplied learnings proposal(s) sit in .claude/claude-md-review.md, queued by earlier sessions in this repository. Nothing there is in effect until a human moves it into AGENTS.md. Raise them when the current task reaches a natural pause — summarise each in a line and ask whether to apply, edit, or drop it. Do not apply them unprompted. Compare each against what AGENTS.md says now: an entry whose content is already there was applied and never marked, so offer to append " — APPLIED" to its heading instead of raising it again next session.\n' "$PENDING"
 exit 0

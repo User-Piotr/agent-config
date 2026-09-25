@@ -20,6 +20,16 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "matcher": "mcp__.*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/scripts/block-mcp-mutations.sh\"",
+            "timeout": 10
+          }
+        ]
       }
     ],
     "SessionStart": [
@@ -91,8 +101,9 @@
     },
     "filesystem": {
       "allowWrite": [
-        "~/.kube",
-        "~/.aws",
+        "~/.kube/cache",
+        "~/.aws/cli/cache",
+        "~/.aws/sso/cache",
         "~/.azure",
         "~/.terraform.d",
         "~/.cache",
@@ -106,10 +117,8 @@
       "Edit(~/.ssh/**)",
       "Read(~/.aws/credentials)",
       "Edit(~/.aws/credentials)",
-      "Read(~/.kube/config)",
       "Read(~/.claude/.credentials.json)",
       "Edit(~/.claude/.credentials.json)",
-      "Read(~/.config/gh/hosts.yml)",
       "Edit(~/.zshrc)",
       "Edit(~/.bashrc)",
       "Edit(~/.gitconfig)",
