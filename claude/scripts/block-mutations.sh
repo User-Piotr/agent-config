@@ -58,15 +58,21 @@ if ! command -v jq >/dev/null 2>&1; then
   echo "block-mutations.sh: jq not found on PATH; failing closed." >&2
   exit 2
 fi
-if ! printf '%s' "$INPUT_JSON" | jq -e 'type == "object"' >/dev/null 2>&1; then
-  echo "block-mutations.sh: input is not a JSON object; failing closed." >&2
+# One jq call for validation and every field: this runs on every Bash call.
+# @sh quotes each value as a single shell word, so the eval only ever assigns.
+# A field that is neither a string nor absent fails closed like bad JSON.
+if ! FIELDS="$(printf '%s' "$INPUT_JSON" | jq -r '
+    def str: if . == null then "" elif type == "string" then . else error("not a string") end;
+    if type != "object" then error("not an object") else
+      @sh "TOOL_NAME=\(.tool_name | str)",
+      @sh "COMMAND=\(.tool_input.command | str)",
+      @sh "AGENT_TYPE=\(.agent_type | str)",
+      @sh "AGENT_ID=\(.agent_id | str)"
+    end' 2>/dev/null)" || [[ -z "$FIELDS" ]]; then
+  echo "block-mutations.sh: cannot read the hook input; failing closed." >&2
   exit 2
 fi
-
-TOOL_NAME="$(printf '%s' "$INPUT_JSON" | jq -r '.tool_name // empty')"
-COMMAND="$(printf '%s' "$INPUT_JSON" | jq -r '.tool_input.command // empty')"
-AGENT_TYPE="$(printf '%s' "$INPUT_JSON" | jq -r '.agent_type // empty')"
-AGENT_ID="$(printf '%s' "$INPUT_JSON" | jq -r '.agent_id // empty')"
+eval "$FIELDS"
 
 [[ "$TOOL_NAME" == "Bash" ]] || exit 0
 [[ -n "$COMMAND" ]] || exit 0

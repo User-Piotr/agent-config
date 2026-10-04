@@ -146,6 +146,19 @@ b deny "sub:general-purpose"         "gh pr create --title x"
 # --- Bash: bad input fails closed --------------------------------------------
 check deny "$(printf 'not json' | verdict "$BASH_GUARD")" "bash invalid JSON"
 check deny "$(printf 'not json' | verdict "$MCP_GUARD")" "mcp invalid JSON"
+check deny "$(printf '' | verdict "$BASH_GUARD")" "bash empty input"
+check deny "$(printf '' | verdict "$MCP_GUARD")" "mcp empty input"
+check deny "$(printf '[]' | verdict "$BASH_GUARD")" "bash JSON array"
+check deny "$(printf '[]' | verdict "$MCP_GUARD")" "mcp JSON array"
+
+# --- Bash: the parsed fields are only ever assigned, never run ----------------
+CANARY="$CLAUDE_CONFIG_DIR/canary"
+b ask ""  "terraform apply -var 'x=y'\"; touch $CANARY; #"
+check deny "$(jq -cn --arg c "touch $CANARY" '{tool_name:"Bash",tool_input:{command:["terraform apply",$c]}}' \
+  | verdict "$BASH_GUARD")" "bash command given as an array"
+if [[ -e "$CANARY" ]]; then
+  FAIL=$((FAIL+1)); echo "FAIL  a field from the hook input was executed"
+else PASS=$((PASS+1)); fi
 
 # --- Bash: the log never records a secret ------------------------------------
 input Bash command "GITHUB_TOKEN=ghp_secret123 gh pr list" "" | bash "$BASH_GUARD" >/dev/null 2>&1
