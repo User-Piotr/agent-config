@@ -140,7 +140,7 @@ b ask  "top:devops"                 "git push origin main"
 # a top-level session under an agent name nobody listed is treated as headless.
 b deny "top:some-other-agent"       "git push origin main"
 b deny "sub:devops-implementer"      $'cd infra\nterraform apply -auto-approve'
-b deny "sub:otcf-devops-implementer" "kubectl apply -f x.yaml"
+b deny "sub:forked-implementer"       "kubectl apply -f x.yaml"
 b deny "sub:general-purpose"         "gh pr create --title x"
 
 # --- Bash: bad input fails closed --------------------------------------------
