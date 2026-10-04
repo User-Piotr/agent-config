@@ -1,0 +1,24 @@
+name: checks
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Warnings and errors fail the job; info notes such as SC2016 on the
+      # deliberately single-quoted test commands do not.
+      - name: shellcheck
+        run: |
+          git ls-files -z '*.sh' | xargs -0 shellcheck --severity=warning
+
+      - name: guard tests
+        run: bash claude/tests/guards.sh

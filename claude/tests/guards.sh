@@ -13,7 +13,8 @@ BASH_GUARD="$HERE/../scripts/block-mutations.sh"
 MCP_GUARD="$HERE/../scripts/block-mcp-mutations.sh"
 
 # Keep the guards' logs out of the real ~/.claude while testing.
-export CLAUDE_CONFIG_DIR="$(mktemp -d)"
+CLAUDE_CONFIG_DIR="$(mktemp -d)"
+export CLAUDE_CONFIG_DIR
 trap 'rm -rf "$CLAUDE_CONFIG_DIR"' EXIT
 
 FAIL=0
