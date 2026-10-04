@@ -64,6 +64,9 @@ add_mcp() {
   claude mcp add-json "$1" "$2" --scope user >/dev/null && log "added $1"
 }
 
+# Unpinned on purpose: a pin nobody bumps goes stale, and @latest is the
+# accepted risk for two well-known publishers on a single-user machine.
+#
 # MCP_USER_AGENT: docs.aws.amazon.com rejects the default agent string.
 add_mcp awslabs.aws-documentation-mcp-server '{
   "command": "uvx",
