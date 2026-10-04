@@ -23,16 +23,72 @@ install.sh        dispatcher, one directory per agent CLI
 claude/
   install.sh      links this directory into ~/.claude
   settings.json   model, hooks, sandbox, permissions
-  CLAUDE.md       global instructions
+  CLAUDE.md       global instructions; graphify writes its block here
   agents/         devops (main), devops-implementer, troubleshooter, devops-reviewer
   skills/         delivery: branch, commit and pull request conventions
   scripts/        mutation guards for Bash and MCP, the two learnings hooks
   docs/           learnings.md, the learnings policy, read on demand
+  tests/          guards.sh, the table the guards are checked against
 ```
 
 Every session starts as `devops` (`"agent": "devops"` in `settings.json`). Drop
 the key for a stock session, or override it per repository in
 `.claude/settings.local.json`.
+
+## MCP servers
+
+`install.sh` registers two, both read-only and both on the MCP guard's
+read-only list:
+
+- **context7** — current docs for tools, frameworks and libraries.
+- **aws-documentation** — AWS service docs, quotas and API references.
+
+`devops`, `devops-implementer` and `troubleshooter` get both. Subagents list
+each MCP tool by its full name in `tools:`; a server-wide wildcard there is not
+documented, so it is not relied on.
+
+## Skills
+
+`settings.json` keeps the skill list short, because every enabled skill costs
+its description in context on every turn:
+
+- `syncClaudeAiSkills: false` drops the skills synced from claude.ai (docx,
+  pptx, pdf, morning, computer-use, ...).
+- `skillOverrides` switches off the bundled skills this setup does not use.
+  Set a name to `"on"` to bring it back.
+
+`skillOverrides` does not reach a plugin: its skills show as "locked by plugin"
+and stay on, and so do its agents. The caveman plugin therefore loads all its
+skills and its three `cavecrew-*` agents. Whether it stays is an all-or-nothing
+decision about the plugin.
+
+## Knowledge graph
+
+`install.sh` installs graphify, and `graphify install --platform claude` adds
+its skill and writes a block into `CLAUDE.md` — through the symlink, so that
+block is part of this repository.
+
+graphify can build its graph from code alone, with no LLM call and no network,
+for the file types it parses. Coverage depends on the repository: some come out
+detailed, others nearly empty until `/graphify` runs its LLM pass. Run the two
+commands and check what came out before relying on the graph:
+
+```bash
+graphify update . --no-cluster
+graphify cluster-only . --no-label --no-viz
+```
+
+Every query then runs offline against `graphify-out/graph.json`:
+
+```bash
+graphify affected "<node>"          # what references it, with file:line
+graphify god-nodes                  # the most connected nodes
+graphify query "<question>" --budget 1500
+```
+
+The output lands in `graphify-out/` at the repository root. Step-by-step
+building and refreshing, including the shared multi-repository graph:
+[GRAPHIFY.md](GRAPHIFY.md).
 
 ## Editing
 
