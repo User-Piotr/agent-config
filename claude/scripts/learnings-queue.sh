@@ -44,8 +44,13 @@ SESSION="$(jq -r '.session_id // "unknown"' <<<"$INPUT" 2>/dev/null)"
 [[ "$REASON" == "resume" ]] && exit 0
 [[ -f "$TRANSCRIPT" ]] || exit 0
 
-REPO="$(git -C "$CWD" rev-parse --show-toplevel 2>/dev/null)"
-[[ -n "$REPO" ]] || exit 0
+# The main repository, not the work tree: --show-toplevel inside a worktree
+# names the worktree, so the proposal would land there and vanish with it.
+# --git-common-dir points at the shared .git of the main checkout.
+COMMON="$(git -C "$CWD" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)"
+[[ -n "$COMMON" ]] || exit 0
+REPO="$(cd "$COMMON/.." 2>/dev/null && pwd)"
+[[ -n "$REPO" && -d "$REPO" ]] || exit 0
 
 STATE="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/logs"
 mkdir -p "$STATE/digests" || exit 0
@@ -67,15 +72,24 @@ LOCK="$STATE/.learnings-$SESSION.done"
 [[ -e "$LOCK" ]] && exit 0
 
 DIGEST="$STATE/digests/$SESSION.txt"
+# Typed prompts are stored as a plain string, tool traffic as an array; an
+# earlier filter read arrays only and dropped nearly every prompt the user
+# wrote. Text the harness injects into the user turn — system reminders, task
+# and agent notifications, local command output — is noise, not the user.
 jq -r '
   def clip($n): if (. | length) > $n then (.[0:$n] + " …") else . end;
-  select(.message.content? and (.message.content | type == "array"))
+  def injected: test("^\\s*<(system-reminder|task-notification|agent-message|local-command|command-)");
+  select(.message.content?)
   | .message.role as $role
-  | .message.content[]
-  | if   .type == "text" and $role == "user"      then "USER: "   + (.text | clip(800))
+  | (.message.content | if type == "string" then [{type: "text", text: .}] else . end)[]
+  | if   .type == "text" and $role == "user" and (.text | injected | not) then "USER: " + (.text | clip(800))
     elif .type == "text" and $role == "assistant" then "CLAUDE: " + (.text | clip(800))
     elif .type == "tool_use" and .name == "Bash"  then "$ "       + (.input.command // "" | clip(300))
     elif .type == "tool_use" and (.name == "Edit" or .name == "Write") then "EDIT " + (.input.file_path // "")
+    elif .type == "tool_use" and .name == "Read"  then "READ "    + (.input.file_path // "")
+    elif .type == "tool_use" and .name == "WebFetch" then "FETCH " + (.input.url // "")
+    elif .type == "tool_use" and (.name == "Agent" or .name == "Task") then
+      "AGENT " + (.input.subagent_type // "general") + ": " + (.input.description // "")
     elif .type == "tool_result" and .is_error == true then
       "ERROR: " + ((.content | if type == "array" then (map(.text? // "") | join(" ")) else tostring end) | clip(300))
     else empty end
@@ -120,6 +134,14 @@ AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session tran
 # tool error text from the session, which is untrusted input, and settings.json
 # auto-allows sandboxed Bash — so without --disallowed-tools the child could
 # run commands a transcript talked it into. It needs to read and edit one file.
+# --no-session-persistence keeps these runs off the `claude --resume` list.
+# --strict-mcp-config with no --mcp-config starts no MCP servers, so no
+# npx/uvx @latest round-trip at every session end. --bare would skip plugins
+# and hooks as well, but it also skips the subscription login ("Not logged
+# in", checked 2026-09-25) and would kill every run silently.
+# --max-budget-usd is a ceiling, not an estimate: a one-word reply already
+# costs over $0.05 in fixed prompt and cache overhead, so a tighter cap would
+# cut long sessions off before the proposal is written.
 (
   # nohup's job: closing the terminal right after the session must not kill
   # the child mid-write. An ignored signal is inherited across exec.
@@ -129,7 +151,11 @@ AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session tran
     --agents "$AGENT_JSON" \
     --agent learnings-writer \
     --allowed-tools Read Grep Glob Edit Write \
-    --disallowed-tools Bash WebFetch WebSearch NotebookEdit
+    --disallowed-tools Bash WebFetch WebSearch NotebookEdit \
+    --no-session-persistence \
+    --strict-mcp-config \
+    --max-turns 15 \
+    --max-budget-usd 1.00
   rm -f "$DIGEST"
 ) >>"$STATE/learnings.log" 2>&1 </dev/null &
 disown 2>/dev/null || true
