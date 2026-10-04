@@ -127,6 +127,16 @@
     ]
   },
   "effortLevel": "high",
+  "syncClaudeAiSkills": false,
+  "skillOverrides": {
+    "dataviz": "off",
+    "artifact-design": "off",
+    "artifact-diagramming": "off",
+    "artifact-capabilities": "off",
+    "claude-api": "off",
+    "keybindings-help": "off",
+    "run": "off"
+  },
   "agent": "devops",
   "theme": "dark-daltonized"
 }

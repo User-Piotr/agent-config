@@ -10,7 +10,7 @@
 # side rather than weaker: a name cannot hide behind `bash -c` or a pipe.
 #
 # Verdicts mirror block-mutations.sh: "ask" for the interactive session, "deny"
-# for a subagent, which runs headless and cannot answer a prompt. Who is asking
+# for a subagent, since only the main session publishes. Who is asking
 # is decided the same way there, and the reasoning lives in that script.
 #
 # Order of the checks, and why:
@@ -97,7 +97,7 @@ decide() {
 verdict() {
   if [[ "$IS_HEADLESS" == true ]]; then
     log "deny"
-    decide deny "$1 [blocked: a subagent runs headless and cannot confirm]"
+    decide deny "$1 [blocked: only the main session publishes or changes live systems; hand this step back]"
   fi
   log "ask"
   decide ask "$1"

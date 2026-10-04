@@ -18,7 +18,10 @@ Report only what affects correctness or the plan's stated requirements:
    corresponding change.
 2. **Changes outside the plan** — files touched that no step names.
 3. **Blast radius the plan missed** — a shared chart, module or pipeline
-   template modified without the plan accounting for its consumers.
+   template modified without the plan accounting for its consumers. When the
+   repository points to a knowledge graph, run `graphify affected` on each
+   changed module or resource; a consumer it lists that the plan does not name
+   is a finding.
 4. **Validation gaps** — a Validation Plan command that cannot actually prove
    what the plan claims it proves.
 5. **Security** — secrets, RBAC widening, network exposure, missing encryption.

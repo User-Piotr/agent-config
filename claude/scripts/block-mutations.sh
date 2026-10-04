@@ -13,16 +13,18 @@
 # the assumption that nobody is looking.
 #
 # Two verdicts, chosen by WHO is running the command:
-#   - a subagent, which runs headless and cannot answer a prompt: DENY.
+#   - a subagent: DENY. Publishing and live changes stay with the main
+#     session, where the plan was approved; a subagent hands back edits.
 #   - the interactive session: "ask", so Claude Code prompts first.
 # `git commit` is deliberately unguarded: committing is expected and undoable
 # locally. Publishing and live mutations are what other people see.
 #
-# This is the backstop, not the only layer. `permissions.ask` in
-# settings.json covers the same categories with Claude Code's own parser.
-# This script exists for what that parser does not see — `sudo`,
-# `env VAR=x`, `bash -c "..."`, absolute paths — and for the hard deny a
-# subagent needs, which a permission rule cannot express.
+# Today this script is the only layer: settings.json has no permissions.ask
+# rules, and cloud CLIs (aws, eksctl, az outside repos) are outside its scope.
+# Claude Code's own parser would handle compound commands better, but it does
+# not see `sudo`, `env VAR=x`, `bash -c "..."` or absolute paths, cannot
+# express "unless --dry-run", and cannot give a subagent a hard deny — which is
+# why this script stays even once a permissions.ask layer is added beside it.
 #
 # How a command is read. Text matching, not a shell parser:
 #   1. Heredoc bodies are dropped, so a document that merely mentions
@@ -80,7 +82,7 @@ AGENT_ID="$(printf '%s' "$INPUT_JSON" | jq -r '.agent_id // empty')"
 # agent_id means subagent, and so does any agent_type outside the list of
 # agents a human drives. The list names the INTERACTIVE agents, so a renamed
 # fork fails closed — an earlier version listed the headless ones, and a fork
-# calling them otcf-* silently lost the deny.
+# that renamed them silently lost the deny.
 INTERACTIVE_AGENTS=("devops")
 IS_HEADLESS=false
 if [[ -n "$AGENT_ID" ]]; then
@@ -112,7 +114,7 @@ decide() {
 verdict() {
   if [[ "$IS_HEADLESS" == true ]]; then
     log "deny"
-    decide deny "$1 [blocked: a subagent runs headless and cannot confirm]"
+    decide deny "$1 [blocked: only the main session publishes or changes live systems; hand this step back]"
   fi
   log "ask"
   decide ask "$1"

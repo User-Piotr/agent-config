@@ -99,7 +99,9 @@ IGNORE="$(git config --global core.excludesFile 2>/dev/null || true)"
 IGNORE="${IGNORE/#\~/$HOME}"
 [ -n "$IGNORE" ] || IGNORE="${XDG_CONFIG_HOME:-$HOME/.config}/git/ignore"
 mkdir -p "$(dirname "$IGNORE")"
-for pat in '.claude/settings.local.json' '.claude/agent-memory/' '.claude/.headroom_wrap_*' '.claude/claude-md-review.md'; do
+# `**/` because a pattern with a slash in the middle is anchored to the
+# repository root, and a session started in a subdirectory drops its own .claude/.
+for pat in '**/.claude/settings.local.json' '**/.claude/agent-memory/' '**/.claude/agent-memory-local/' '**/.claude/.headroom_wrap_*' '**/.claude/claude-md-review.md'; do
   grep -qxF "$pat" "$IGNORE" 2>/dev/null || { printf '%s\n' "$pat" >> "$IGNORE"; log "$pat"; }
 done
 log "in $IGNORE"

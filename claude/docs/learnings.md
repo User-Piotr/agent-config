@@ -18,7 +18,7 @@ Fold in the implementer's returned Learnings and the troubleshooter's, plus your
 
 ## How to word it
 
-Bullets taken from repositories here:
+Examples of bullets that earn their place:
 
 ```
 A module never configures a provider; it inherits the caller's. Its own provider
@@ -35,4 +35,4 @@ The first carries a consequence because the rule is not self-evident. The second
 
 - English, one line per bullet, never a paragraph. The review file is a staging area for text pasted verbatim into the target file, so it must already read like the target file.
 - For each proposed change, write the exact bullet(s) to add, edit, or remove, targeted at `AGENTS.md`'s `## DevOps Conventions (agent-maintained)` section (creating that section if missing when the user applies it).
-- Claude Code loads `CLAUDE.md`, not `AGENTS.md`, so where the repo's `CLAUDE.md` lacks an `@AGENTS.md` import at the top, say that it needs one.
+- Claude Code reads `AGENTS.md` on its own only when the repository has no `CLAUDE.md` (v2.1.277 and later). Where both exist and `CLAUDE.md` lacks an `@AGENTS.md` import at the top, say that it needs one.

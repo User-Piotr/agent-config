@@ -19,8 +19,8 @@ The scope is the thing changed — a module, chart, pipeline, cluster or compone
 feat(terraform): add ALB access logs to the shared module
 fix(eks): pin the CNI addon version
 docs(wiki): add a runbook for the Aurora failover
-chore(gitops): bump workflow-templates to v0.3.9
-ci(workflow-templates): run tflint on pull requests
+chore(gitops): bump the shared pipeline templates to v0.3.9
+ci(pipelines): run tflint on pull requests
 refactor(helm): extract the probe block into _helpers.tpl
 ```
 
@@ -31,9 +31,9 @@ This vocabulary is the team's: apply it even where a repository's own history pr
 ## Branch
 
 - Branch from the branch feature work merges into: the default branch (`git symbolic-ref --short refs/remotes/origin/HEAD`), unless the repository promotes through another. Every commit of yours lands on a branch of your own.
-- Some repositories here promote feature → `qa` → `master`, and there `master` lags behind. Their `AGENTS.md` says so. Where it is silent but a `qa` branch is ahead of the default — `git rev-list --count origin/<default>..origin/qa` above zero — ask before branching, and propose the answer as a learning for that repository.
+- Some repositories promote feature → `qa` → `master`, and there `master` lags behind. Their `AGENTS.md` says so. Where it is silent but a `qa` branch is ahead of the default — `git rev-list --count origin/<default>..origin/qa` above zero — ask before branching, and propose the answer as a learning for that repository.
 - `<type>/<scope>-<what>`, lowercase, hyphens.
-- One branch per plan artifact. Where a plan spans repositories, keep the same branch name in each so the set stays findable — `docs/working-agreements` and `docs/knowledge-graph-pointer` already work this way.
+- One branch per plan artifact. Where a plan spans repositories, keep the same branch name in each so the set stays findable.
 
 ## Commit
 
