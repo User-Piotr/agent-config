@@ -83,12 +83,15 @@ eval "$FIELDS"
 # 62 calls from this very session carried agent_type=devops. So agent_type
 # alone cannot tell a human from a subagent.
 #
-# agent_id is documented as present only inside a subagent, which would make
-# it the clean signal. Until the log shows that holds, both rules apply: an
-# agent_id means subagent, and so does any agent_type outside the list of
-# agents a human drives. The list names the INTERACTIVE agents, so a renamed
-# fork fails closed — an earlier version listed the headless ones, and a fork
-# that renamed them silently lost the deny.
+# agent_id is present only inside a subagent, and the log bears that out
+# (2026-09-25..10-04): all 151 subagent calls carried one, no top-level call
+# did. It is still not enough on its own. A top-level session started headless
+# with another agent — `claude -p --agent X` from a script, cron or schedule —
+# has no agent_id either, and without the list it would get ask, not deny.
+# So both rules apply: an agent_id means subagent, and so does any agent_type
+# outside the list of agents a human drives. The list names the INTERACTIVE
+# agents, so a renamed fork fails closed — an earlier version listed the
+# headless ones, and a fork that renamed them silently lost the deny.
 INTERACTIVE_AGENTS=("devops")
 IS_HEADLESS=false
 if [[ -n "$AGENT_ID" ]]; then

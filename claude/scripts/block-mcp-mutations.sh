@@ -75,7 +75,8 @@ TOOL="$(printf '%s' "${REST#*__}" | tr '[:upper:]-' '[:lower:]_')"
 
 # Same rule as block-mutations.sh: an agent_id means subagent, and so does an
 # agent_type outside the interactive list. Real MCP calls from the main session
-# carry agent_type=devops (mcp-guard.log, 2026-09-23..25), so the list is needed.
+# carry agent_type=devops (mcp-guard.log, 2026-09-23..25), so the list is needed,
+# and agent_id alone misses a headless top-level `claude -p --agent X`.
 INTERACTIVE_AGENTS=("devops")
 IS_HEADLESS=false
 if [[ -n "$AGENT_ID" ]]; then
