@@ -19,12 +19,15 @@
 # `git commit` is deliberately unguarded: committing is expected and undoable
 # locally. Publishing and live mutations are what other people see.
 #
-# Today this script is the only layer: settings.json has no permissions.ask
-# rules, and cloud CLIs (aws, eksctl, az outside repos) are outside its scope.
-# Claude Code's own parser would handle compound commands better, but it does
-# not see `sudo`, `env VAR=x`, `bash -c "..."` or absolute paths, cannot
-# express "unless --dry-run", and cannot give a subagent a hard deny — which is
-# why this script stays even once a permissions.ask layer is added beside it.
+# This script is the first layer. settings.json carries permissions.ask rules
+# as the second, for the commands with no dry-run form an agent runs routinely:
+# Claude Code's own parser splits compound commands, subshells and loops more
+# reliably, so a miss here can still be caught there. kubectl and helm have no
+# rules, because a prefix rule cannot say "unless --dry-run" and would prompt
+# on every dry-run. The rules do not see `sudo`, `bash -c "..."`, absolute
+# paths or global flags before the subcommand (`terraform -chdir=x apply`),
+# and cannot give a subagent a hard deny — which is why this script stays.
+# Cloud CLIs (aws, eksctl, az outside repos) are outside both layers' scope.
 #
 # How a command is read. Text matching, not a shell parser:
 #   1. Heredoc bodies are dropped, so a document that merely mentions
