@@ -146,7 +146,7 @@ AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session tran
   # nohup's job: closing the terminal right after the session must not kill
   # the child mid-write. An ignored signal is inherited across exec.
   trap '' HUP
-  CLAUDE_LEARNINGS_CHILD=1 claude -p "$PROMPT" \
+  OUT="$(CLAUDE_LEARNINGS_CHILD=1 claude -p "$PROMPT" \
     --model sonnet \
     --agents "$AGENT_JSON" \
     --agent learnings-writer \
@@ -155,7 +155,16 @@ AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session tran
     --no-session-persistence \
     --strict-mcp-config \
     --max-turns 15 \
-    --max-budget-usd 1.00
+    --max-budget-usd 1.00 \
+    --output-format json)"
+  # One line per run, so cost and outcome can be totalled with awk later.
+  # Anything that is not the JSON result — a crash, a login error — is kept
+  # as it came, rather than lost to a parse failure.
+  printf '%s' "$OUT" | jq -r --arg s "$SESSION" --arg r "$REPO" '
+    [ (now | todate), "session=\($s)", "repo=\($r)",
+      "cost_usd=\(.total_cost_usd // "?")", "turns=\(.num_turns // "?")",
+      (.subtype // "?"), (.result // "" | gsub("\\s+"; " ")) ] | join("\t")' \
+    2>/dev/null || printf '%s\n' "$OUT"
   rm -f "$DIGEST"
 ) >>"$STATE/learnings.log" 2>&1 </dev/null &
 disown 2>/dev/null || true
