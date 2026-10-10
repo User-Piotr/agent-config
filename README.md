@@ -108,7 +108,14 @@ review file to the global gitignore; API keys live in `.env`, ignored too.
   ask first, and are denied outright for any subagent, which cannot answer a
   prompt. It matches text: `./deploy.sh` or `make apply` pass unseen, so keep
   least-privilege credentials behind it where you can.
-- `block-mcp-mutations.sh` does the same for MCP tools, judged by tool name.
+- `permissions.ask` in `settings.json` is the second layer for the same Bash
+  commands: Terraform, OpenTofu and Terragrunt state changes, helmfile, Argo CD
+  app writes, `git push`, and the `gh` and `az repos` writes that publish.
+  Claude Code matches these itself, inside `&&`, `$()` and loops, and they hold
+  even though the sandbox auto-allows Bash. kubectl and helm are left to the
+  guard alone, since a prefix rule would also prompt on every dry-run.
+- `block-mcp-mutations.sh` does for MCP tools what `block-mutations.sh` does
+  for Bash, judged by tool name.
 - Both log each decision to `~/.claude/logs/`, recording the judged binary or
   tool name, never the full command line.
 - `bash claude/tests/guards.sh` runs both guards against a table of real
