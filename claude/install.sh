@@ -129,15 +129,26 @@ else
 fi
 
 step "Headroom and skills"
-# `headroom init claude` owns its whole integration: the MCP entry, the
-# ANTHROPIC_BASE_URL routing, and the SessionStart selfheal hook. It writes the
-# machine-local parts to settings.local.json, which stays untracked.
+# Routing goes through `headroom wrap claude`, run per session: it writes
+# ANTHROPIC_BASE_URL and its selfheal hook to <repo>/.claude/settings.local.json,
+# which is project-local and untracked. When the session ends it removes the
+# routing and keeps the selfheal hook, which clears a dead proxy's address.
+#
+# `headroom init --global claude` is deliberately not run. It writes the same
+# routing permanently into ~/.claude/settings.json, which is a symlink to this
+# repo, so every install would dirty the tracked file with one machine's paths.
+# There is no user-level settings.local.json to send it to instead: Claude Code
+# reads that file only as the local settings of the project it was started in.
+#
+# The MCP server is registered on its own; `claude mcp add` puts it in
+# ~/.claude.json, which is machine-local.
 command -v headroom  >/dev/null || uv tool install headroom-ai
 command -v graphify  >/dev/null || { uv tool install graphifyy && graphify install --platform claude; }
-# --global belongs to `init`, not to `claude`: click puts group options before
-# the subcommand, so `headroom init claude --global` fails with "No such option".
-headroom init --global claude
-log "verify with: headroom doctor"
+case "$INSTALLED" in
+  *"headroom:"*) log "headroom MCP present" ;;
+  *)             headroom mcp install --agent claude >/dev/null && log "added headroom MCP" ;;
+esac
+log "start sessions with: headroom wrap claude    verify with: headroom doctor"
 
 step "Done"
 log "restart Claude Code to pick up hooks and env changes"
