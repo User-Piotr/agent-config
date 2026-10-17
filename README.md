@@ -37,13 +37,25 @@ the key for a stock session, or override it per repository in
 
 ## MCP servers
 
-`install.sh` registers two, both read-only and both on the MCP guard's
+`install.sh` registers three, all read-only and all on the MCP guard's
 read-only list:
 
 - **context7** — current docs for tools, frameworks and libraries.
 - **aws-documentation** — AWS service docs, quotas and API references.
+- **headroom** — `headroom_compress`, `headroom_retrieve` and `headroom_stats`,
+  which pair with the Headroom proxy.
 
-`devops`, `devops-implementer` and `troubleshooter` get both. Subagents list
+Traffic reaches the Headroom proxy only in sessions started with
+`headroom wrap claude`; a bare `claude` goes straight to the API. `wrap` writes
+its routing to the repository's untracked `.claude/settings.local.json` and
+removes it when the session ends, leaving only a selfheal hook that clears a
+dead proxy's address after a crash. Do not run `headroom init` in either form:
+`--global` writes the routing into `~/.claude/settings.json`, which is this
+repository's tracked file, and the local form adds hooks and a plugin to the
+project that `wrap` does not need.
+
+`devops`, `devops-implementer` and `troubleshooter` get context7 and
+aws-documentation. Subagents list
 each MCP tool by its full name in `tools:`; a server-wide wildcard there is not
 documented, so it is not relied on.
 

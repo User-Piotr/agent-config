@@ -70,12 +70,6 @@
         "source": "github",
         "repo": "JuliusBrussee/caveman"
       }
-    },
-    "headroom-marketplace": {
-      "source": {
-        "source": "github",
-        "repo": "chopratejas/headroom"
-      }
     }
   },
   "sandbox": {
