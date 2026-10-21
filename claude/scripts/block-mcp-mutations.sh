@@ -28,10 +28,14 @@ set -uo pipefail
 
 # Servers whose whole surface is read-only, or whose writes are working-tree
 # edits the implementer is meant to make (serena). Matched on the server
-# segment of the tool name.
+# segment of the tool name. The match is exact, never a prefix: another plugin's
+# server must not be able to borrow a trusted name (a plugin server is named
+# plugin_<plugin>_<server>, so only devops-core itself can produce these two).
 READ_ONLY_SERVERS=(
   "context7"
   "awslabs_aws-documentation-mcp-server"
+  "plugin_devops-core_context7"
+  "plugin_devops-core_aws-documentation"
   "headroom"
   "serena"
 )
@@ -77,7 +81,9 @@ TOOL="$(printf '%s' "${REST#*__}" | tr '[:upper:]-' '[:lower:]_')"
 # agent_type outside the interactive list. Real MCP calls from the main session
 # carry agent_type=devops (mcp-guard.log, 2026-09-23..25), so the list is needed,
 # and agent_id alone misses a headless top-level `claude -p --agent X`.
-INTERACTIVE_AGENTS=("devops")
+# "devops-core:devops" is the plugin's name for the same agent; plain "devops"
+# stays until every machine has migrated from the user-scope copy.
+INTERACTIVE_AGENTS=("devops" "devops-core:devops")
 IS_HEADLESS=false
 if [[ -n "$AGENT_ID" ]]; then
   IS_HEADLESS=true

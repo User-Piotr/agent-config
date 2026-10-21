@@ -1,3 +1,8 @@
+---
+name: learnings
+description: How to propose durable learnings for a repository's AGENTS.md. Use when a session produced something worth recording, at Step 6 of the devops agent, or when closing out a session headlessly.
+---
+
 # Proposing Learnings
 
 Read this when Step 6 of `devops.md` has found something worth recording. It holds what qualifies, where the draft goes, and how to word it. The draft is always a proposal for the user to review — never a direct edit to `AGENTS.md` or `CLAUDE.md`.

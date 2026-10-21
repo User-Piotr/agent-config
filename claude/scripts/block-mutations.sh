@@ -95,7 +95,9 @@ eval "$FIELDS"
 # outside the list of agents a human drives. The list names the INTERACTIVE
 # agents, so a renamed fork fails closed — an earlier version listed the
 # headless ones, and a fork that renamed them silently lost the deny.
-INTERACTIVE_AGENTS=("devops")
+# "devops-core:devops" is the plugin's name for the same agent; plain "devops"
+# stays until every machine has migrated from the user-scope copy.
+INTERACTIVE_AGENTS=("devops" "devops-core:devops")
 IS_HEADLESS=false
 if [[ -n "$AGENT_ID" ]]; then
   IS_HEADLESS=true

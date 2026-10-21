@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ~/.claude/scripts/learnings-queue.sh
+# plugins/devops-core/scripts/learnings-queue.sh
 #
 # SessionEnd hook. Queues a learnings proposal for the repository the session
 # ran in, then returns immediately.
@@ -15,7 +15,7 @@
 # file until a human applies it; learnings-pending.sh surfaces it at the start
 # of the next session in that repository.
 #
-# What qualifies and how it is worded lives in docs/learnings.md, which the
+# What qualifies and how it is worded lives in skills/learnings/SKILL.md, which the
 # interactive session reads at its own Step 6. The child is pointed at that
 # same file rather than carrying a second copy of the policy: one file to
 # edit when the rules change, and a proposal written here is interchangeable
@@ -60,9 +60,9 @@ mkdir -p "$STATE/digests" || exit 0
 # this sweeps up whatever a crashed or killed child left behind.
 find "$STATE/digests" -type f -name '*.txt' -mtime +2 -delete 2>/dev/null
 
-POLICY="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/docs/learnings.md"
+POLICY="${CLAUDE_PLUGIN_ROOT}/skills/learnings/SKILL.md"
 if [[ ! -f "$POLICY" ]]; then
-  echo "learnings-queue: $POLICY missing, run install.sh" >>"$STATE/learnings.log"
+  echo "learnings-queue: $POLICY missing, reinstall the devops-core plugin" >>"$STATE/learnings.log"
   exit 0
 fi
 
