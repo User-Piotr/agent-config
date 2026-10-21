@@ -52,7 +52,7 @@ First action: read it in full. If the path is missing or unreadable, return a **
 
 ## 5. Memory
 
-You have a memory directory at `.claude/agent-memory-local/devops-implementer/`. It is local scratch for this machine, not an artifact anyone else receives.
+You have a memory directory at `.claude/agent-memory-local/devops-core-devops-implementer/`. It is local scratch for this machine, not an artifact anyone else receives.
 
 - **Read it first**, before the plan's referenced files. It holds what you learned about this repo on earlier runs: where charts, modules and pipeline templates live, which file a given resource type belongs in, the naming conventions, and the validation commands that actually work here with their exact flags.
 - **Update it at the end of any run that produced a durable fact.** Merge into existing entries rather than appending duplicates; prune what a refactor made false.

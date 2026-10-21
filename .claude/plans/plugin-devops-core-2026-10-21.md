@@ -59,8 +59,14 @@ From the documentation, not tested:
 - The plugin's own `settings.json` honours only `agent` and
   `subagentStatusLine`, and user settings override it.
 
-Still open: the directory `memory: local` creates for a plugin agent, and
-installing a team plugin from a private Azure DevOps marketplace.
+Observed during implementation: `memory: local` keeps a plugin agent's notes
+in `.claude/agent-memory-local/devops-core-<agent>/` (the colon becomes a dash).
+`memory` also enables Read, Write and Edit for the agent, so `troubleshooter`
+had them before the switch to `disallowedTools` as well; listing them as
+disallowed would break its memory. Its read-only promise rests on its prompt,
+as before.
+
+Still open: installing a team plugin from a private Azure DevOps marketplace.
 
 ## Steps
 
@@ -204,8 +210,17 @@ claude -p --plugin-dir $P --agent devops-core:devops "Run: git status" </dev/nul
 claude -p --plugin-dir $P --agent devops-core:devops \
   "Spawn devops-core:troubleshooter. Ask it to list its tools containing 'mcp__' and its available skills, and to run: echo sub" </dev/null
 # learnings hooks fire from the plugin root (learnings.log gains a line on exit in a git repo)
-# installer: settings.json byte-identical after install
-cp claude/settings.json "$TMPDIR/before.json" && ./install.sh claude && cmp "$TMPDIR/before.json" claude/settings.json
+# installer, isolated from the real ~/.claude, against the working copy:
+C=$TMPDIR/inst; cp claude/settings.json "$TMPDIR/before.json"
+CLAUDE_CONFIG_DIR=$C AGENT_CONFIG_MARKETPLACE=$PWD bash claude/install.sh
+cmp "$TMPDIR/before.json" claude/settings.json   # repository file byte-identical
+[ -L "$C/settings.json" ]                        # still a symlink, not a rewritten copy
+CLAUDE_CONFIG_DIR=$C claude plugin list | grep -A4 devops-core   # Status: enabled
+# memory directory name, as the agent reports it
+claude -p --plugin-dir $P --agent devops-core:devops \
+  "Ask devops-core:troubleshooter for the absolute path of its memory directory" </dev/null
+# learnings loop, after a real session ends in a git repository:
+tail -1 ~/.claude/logs/learnings.log   # a line with cost_usd= and the outcome
 ```
 
 Live, on one machine after merge: fresh session in a repository; `/agents`

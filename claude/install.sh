@@ -74,7 +74,13 @@ MARKETPLACE="${AGENT_CONFIG_MARKETPLACE:-User-Piotr/agent-config}"
 # `marketplace update` and `plugin update` do not write it.
 SAVED="$(mktemp)"
 cp "$CONF_DIR/settings.json" "$SAVED"
-restore_settings() { cat "$SAVED" > "$CONF_DIR/settings.json"; }
+# Write the bytes back to the repository file, then relink: if a command
+# replaced the symlink with a regular file, link() moves that file to the
+# backup directory and points ~/.claude/settings.json at the repository again.
+restore_settings() {
+  cat "$SAVED" > "$CONF_DIR/settings.json"
+  [ -L "$CLAUDE_HOME/settings.json" ] || link "$CONF_DIR/settings.json" settings.json
+}
 
 if claude plugin list 2>/dev/null | grep -qF "$PLUGIN"; then
   log "$PLUGIN present (updates arrive through the marketplace's autoUpdate)"
@@ -100,6 +106,12 @@ fi
 
 restore_settings
 rm -f "$SAVED"
+PLUGIN_STATE="$(claude plugin list 2>/dev/null | grep -A4 -F "$PLUGIN" || true)"
+case "$PLUGIN_STATE" in
+  *enabled*) log "$PLUGIN enabled" ;;
+  "")        log "WARNING: $PLUGIN is not installed — agents and skills are missing" ;;
+  *)         log "WARNING: $PLUGIN is installed but not enabled — check /plugin" ;;
+esac
 
 # The plugin now provides context7 and aws-documentation. The user-scope copies
 # earlier versions registered would run beside them (and an identical one hides

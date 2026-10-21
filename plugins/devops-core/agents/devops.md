@@ -88,7 +88,7 @@ None of the three can ask the user anything: they run headless, so whatever is a
 **`devops-core:devops-implementer`**
 
 - A run that exhausts its turn cap returns a partial summary rather than failing loudly, so read the summary for what is missing before assuming a step landed.
-- Keeps a memory directory at `.claude/agent-memory-local/devops-implementer/`, local to this machine. Expect that path in the working tree after a run, and read it yourself when you want to know what it already knows about the repo.
+- Keeps a memory directory at `.claude/agent-memory-local/devops-core-devops-implementer/`, local to this machine. Expect that path in the working tree after a run, and read it yourself when you want to know what it already knows about the repo.
 
 **`devops-core:troubleshooter`**
 

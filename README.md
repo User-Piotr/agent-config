@@ -23,7 +23,28 @@ dangling links after the next reboot. It also installs the plugin from GitHub
 and, when `.env` has a key, stores it as the plugin's context7 option. Restart
 Claude Code after the first install.
 
-The plugin alone, without this repository's policy:
+### Moving a machine from the pre-plugin layout
+
+`git pull` and `./install.sh` do it: the installer removes its old links under
+`~/.claude/{agents,skills,docs,scripts}`, installs the plugin, and drops the
+user-scope `context7` and `awslabs.aws-documentation-mcp-server` registrations
+the plugin replaces. If it stopped halfway, finish by hand:
+
+```bash
+find ~/.claude/agents ~/.claude/skills ~/.claude/docs ~/.claude/scripts -xtype l -delete
+claude mcp remove context7 --scope user
+claude mcp remove awslabs.aws-documentation-mcp-server --scope user
+claude plugin install devops-core@agent-config && git checkout claude/settings.json
+```
+
+Agent memory moves with the new names: `memory: local` keeps a plugin agent's
+notes in `.claude/agent-memory-local/devops-core-<agent>/`. To keep what an
+agent already learned in a repository, rename its directory there, e.g.
+`mv .claude/agent-memory-local/{devops-implementer,devops-core-devops-implementer}`.
+
+### The plugin alone
+
+Without this repository's policy:
 `/plugin marketplace add User-Piotr/agent-config`, then
 `/plugin install devops-core@agent-config`.
 
