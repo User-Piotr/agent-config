@@ -72,7 +72,9 @@ its description in context on every turn:
 `skillOverrides` does not reach a plugin: its skills show as "locked by plugin"
 and stay on, and so do its agents. The caveman plugin therefore loads all its
 skills and its three `cavecrew-*` agents. Whether it stays is an all-or-nothing
-decision about the plugin.
+decision about the plugin. Sessions start in its `lite` mode
+(`CAVEMAN_DEFAULT_MODE` in `env`; the plugin's own default is `full`), and
+`/caveman <level>` switches for the current session.
 
 ## Knowledge graph
 
