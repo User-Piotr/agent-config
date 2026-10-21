@@ -39,9 +39,17 @@
     "command": "bash \"${CLAUDE_CONFIG_DIR:-$HOME/.claude}/hooks/caveman-statusline.sh\""
   },
   "enabledPlugins": {
-    "caveman@caveman": true
+    "caveman@caveman": true,
+    "devops-core@agent-config": true
   },
   "extraKnownMarketplaces": {
+    "agent-config": {
+      "source": {
+        "source": "github",
+        "repo": "User-Piotr/agent-config"
+      },
+      "autoUpdate": true
+    },
     "caveman": {
       "source": {
         "source": "github",
@@ -150,6 +158,6 @@
     "keybindings-help": "off",
     "run": "off"
   },
-  "agent": "devops",
+  "agent": "devops-core:devops",
   "theme": "dark-daltonized"
 }

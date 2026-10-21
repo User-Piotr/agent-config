@@ -23,20 +23,25 @@ link() {
 }
 
 step "Linking config"
+# Only policy is linked: the global instructions, the settings, and the two
+# mutation guards. Agents, skills and the learnings loop ship in the
+# devops-core plugin (../plugins/devops-core), installed below.
 link "$CONF_DIR/CLAUDE.md"                 CLAUDE.md
 link "$CONF_DIR/settings.json"             settings.json
-for f in "$CONF_DIR"/agents/*.md; do
-  link "$f" "agents/$(basename "$f")"
-done
 for f in "$CONF_DIR"/scripts/*.sh; do
   link "$f" "scripts/$(basename "$f")"
   chmod +x "$f"
 done
-for f in "$CONF_DIR"/docs/*.md; do
-  link "$f" "docs/$(basename "$f")"
-done
-for d in "$CONF_DIR"/skills/*/; do
-  link "${d%/}" "skills/$(basename "$d")"
+
+# Earlier versions linked agents/, skills/, docs/ and the learnings scripts from
+# this directory. Those files moved into the plugin, so their links now point
+# at nothing; a leftover agent would also shadow the plugin's under its old
+# name. Remove only dangling links that point into this directory.
+for l in "$CLAUDE_HOME"/agents/* "$CLAUDE_HOME"/skills/* "$CLAUDE_HOME"/docs/* "$CLAUDE_HOME"/scripts/*; do
+  [ -L "$l" ] && [ ! -e "$l" ] || continue
+  case "$(readlink "$l")" in
+    "$CONF_DIR"/*) rm "$l"; log "removed stale ${l#"$CLAUDE_HOME"/}" ;;
+  esac
 done
 
 step "Statusline"
@@ -55,44 +60,58 @@ else
   log "caveman plugin not cloned yet — rerun after Claude Code restarts"
 fi
 
-step "MCP servers"
-INSTALLED=$(claude mcp list 2>/dev/null || true)
-add_mcp() {
-  case "$INSTALLED" in
-    *"$1:"*) log "$1 present"; return ;;
-  esac
-  claude mcp add-json "$1" "$2" --scope user >/dev/null && log "added $1"
-}
+step "devops-core plugin"
+PLUGIN="devops-core@agent-config"
+# Override to test a branch before it is on GitHub, e.g. with a local checkout:
+#   AGENT_CONFIG_MARKETPLACE="$PWD" ./install.sh claude
+MARKETPLACE="${AGENT_CONFIG_MARKETPLACE:-User-Piotr/agent-config}"
 
-# Unpinned on purpose: a pin nobody bumps goes stale, and @latest is the
-# accepted risk for two well-known publishers on a single-user machine.
-#
-# MCP_USER_AGENT: docs.aws.amazon.com rejects the default agent string.
-add_mcp awslabs.aws-documentation-mcp-server '{
-  "command": "uvx",
-  "args": ["awslabs.aws-documentation-mcp-server@latest"],
-  "env": {
-    "FASTMCP_LOG_LEVEL": "ERROR",
-    "AWS_DOCUMENTATION_PARTITION": "aws",
-    "MCP_USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
-  }
-}'
+# `claude plugin marketplace add` and `claude plugin install` at user scope
+# rewrite ~/.claude/settings.json — keys reordered, "opus" turned into
+# "opus[1m]" — even when settings.json already declares the marketplace and
+# enables the plugin, which it does. That file is this repository's, so its
+# bytes are saved first and written back through the symlink afterwards.
+# `marketplace update` and `plugin update` do not write it.
+SAVED="$(mktemp)"
+cp "$CONF_DIR/settings.json" "$SAVED"
+restore_settings() { cat "$SAVED" > "$CONF_DIR/settings.json"; }
 
-if [ -n "${CONTEXT7_API_KEY:-}" ]; then
-  # The key goes in env, not args: an argument is visible to anyone who runs
-  # `ps`, an environment variable is not. The package reads CONTEXT7_API_KEY.
-  add_mcp context7 "{
-    \"command\": \"npx\",
-    \"args\": [\"-y\", \"@upstash/context7-mcp\"],
-    \"env\": {\"CONTEXT7_API_KEY\": \"$CONTEXT7_API_KEY\"}
-  }"
+if claude plugin list 2>/dev/null | grep -qF "$PLUGIN"; then
+  log "$PLUGIN present (updates arrive through the marketplace's autoUpdate)"
 else
-  # Already registered is the normal case on a machine that has been set up;
-  # only a first install actually needs the key.
-  case "$INSTALLED" in
-    *"context7:"*) log "context7 present" ;;
-    *)             log "context7 skipped — set CONTEXT7_API_KEY in .env" ;;
-  esac
+  claude plugin marketplace list 2>/dev/null | grep -qw agent-config \
+    || claude plugin marketplace add "$MARKETPLACE" >/dev/null || true
+  if claude plugin install "$PLUGIN" >/dev/null; then
+    log "installed $PLUGIN"
+  else
+    log "install failed — run: claude plugin install $PLUGIN"
+  fi
+fi
+
+# The key goes in on stdin, never as an argument: an argument is visible to
+# anyone who runs `ps`. A sensitive option is stored outside settings files.
+if [ -n "${CONTEXT7_API_KEY:-}" ]; then
+  jq -n --arg k "$CONTEXT7_API_KEY" '{context7_api_key: $k}' \
+    | claude plugin configure "$PLUGIN" --values-stdin >/dev/null \
+    && log "context7 key set" || log "context7 key not set — run /plugin configure $PLUGIN"
+else
+  log "no CONTEXT7_API_KEY in .env — context7 runs unauthenticated (lower rate limit)"
+fi
+
+restore_settings
+rm -f "$SAVED"
+
+# The plugin now provides context7 and aws-documentation. The user-scope copies
+# earlier versions registered would run beside them (and an identical one hides
+# the plugin's), so they go once the plugin is in place. Matched at line start:
+# the plugin's own entry is listed as plugin:devops-core:context7.
+INSTALLED=$(claude mcp list 2>/dev/null || true)
+if claude plugin list 2>/dev/null | grep -qF "$PLUGIN"; then
+  for n in context7 awslabs.aws-documentation-mcp-server; do
+    if printf '%s\n' "$INSTALLED" | grep -q "^$n:"; then
+      claude mcp remove "$n" --scope user >/dev/null && log "removed user-scope MCP $n"
+    fi
+  done
 fi
 
 step "Global gitignore"
@@ -140,14 +159,10 @@ step "Headroom and skills"
 # There is no user-level settings.local.json to send it to instead: Claude Code
 # reads that file only as the local settings of the project it was started in.
 #
-# The MCP server is registered on its own; `claude mcp add` puts it in
-# ~/.claude.json, which is machine-local.
+# `wrap` also registers headroom's MCP server in ~/.claude.json on every run,
+# with the proxy's current port, so nothing here registers it.
 command -v headroom  >/dev/null || uv tool install headroom-ai
 command -v graphify  >/dev/null || { uv tool install graphifyy && graphify install --platform claude; }
-case "$INSTALLED" in
-  *"headroom:"*) log "headroom MCP present" ;;
-  *)             headroom mcp install --agent claude >/dev/null && log "added headroom MCP" ;;
-esac
 log "start sessions with: headroom wrap claude    verify with: headroom doctor"
 
 step "Done"
