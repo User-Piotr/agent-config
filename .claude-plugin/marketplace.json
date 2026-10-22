@@ -1,0 +1,12 @@
+{
+  "name": "agent-config",
+  "description": "DevOps agent setup for Claude Code: agents, skills and MCP servers",
+  "owner": { "name": "Piotr Kmiecik" },
+  "plugins": [
+    {
+      "name": "devops-core",
+      "source": "./plugins/devops-core",
+      "description": "DevOps agent team (devops, devops-implementer, troubleshooter, devops-reviewer), delivery and learnings skills, read-only documentation MCP servers"
+    }
+  ]
+}

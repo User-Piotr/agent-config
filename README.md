@@ -1,49 +1,95 @@
 # agent-config
 
-My Claude Code setup: a DevOps agent with three subagents, mutation guards, a
-learnings loop and a delivery skill, installed by script instead of copy-paste.
+My Claude Code setup in two parts. The **`devops-core` plugin** carries the
+content: a DevOps agent with three subagents, the delivery and learnings skills,
+the learnings loop, and read-only documentation MCP servers. **`claude/`**
+carries the policy a plugin cannot or should not: sandbox, permissions, the
+mutation guards and the global instructions. This repository is also the
+`agent-config` plugin marketplace, so a team extends the setup with a plugin of
+its own instead of a fork.
 
 ## Install
 
 ```bash
 git clone https://github.com/User-Piotr/agent-config.git ~/Repositories/agent-config
 cd ~/Repositories/agent-config
-cp .env.example .env    # only for MCP servers that take a key
+cp .env.example .env    # optional: CONTEXT7_API_KEY
 ./install.sh
 ```
 
-Clone somewhere permanent. `install.sh` symlinks into `~/.claude`, so the clone
-*is* the installed config; a clone under `/tmp` leaves dangling links after the
-next reboot. Restart Claude Code after the first install.
+Clone somewhere permanent. `install.sh` symlinks the policy files into
+`~/.claude`, so the clone *is* the installed policy; a clone under `/tmp` leaves
+dangling links after the next reboot. It also installs the plugin from GitHub
+and, when `.env` has a key, stores it as the plugin's context7 option. Restart
+Claude Code after the first install.
+
+### Moving a machine from the pre-plugin layout
+
+`git pull` and `./install.sh` do it: the installer removes its old links under
+`~/.claude/{agents,skills,docs,scripts}`, installs the plugin, and drops the
+user-scope `context7` and `awslabs.aws-documentation-mcp-server` registrations
+the plugin replaces. If it stopped halfway, finish by hand:
+
+```bash
+find ~/.claude/agents ~/.claude/skills ~/.claude/docs ~/.claude/scripts -xtype l -delete
+claude mcp remove context7 --scope user
+claude mcp remove awslabs.aws-documentation-mcp-server --scope user
+claude plugin install devops-core@agent-config && git checkout claude/settings.json
+```
+
+Agent memory moves with the new names: `memory: local` keeps a plugin agent's
+notes in `.claude/agent-memory-local/devops-core-<agent>/`. To keep what an
+agent already learned in a repository, rename its directory there, e.g.
+`mv .claude/agent-memory-local/{devops-implementer,devops-core-devops-implementer}`.
+
+### The plugin alone
+
+Without this repository's policy:
+`/plugin marketplace add User-Piotr/agent-config`, then
+`/plugin install devops-core@agent-config`.
 
 ## What's inside
 
 ```
-install.sh        dispatcher, one directory per agent CLI
-claude/
-  install.sh      links this directory into ~/.claude
-  settings.json   model, hooks, sandbox, permissions
-  CLAUDE.md       global instructions; graphify writes its block here
-  agents/         devops (main), devops-implementer, troubleshooter, devops-reviewer
-  skills/         delivery: branch, commit and pull request conventions
-  scripts/        mutation guards for Bash and MCP, the two learnings hooks
-  docs/           learnings.md, the learnings policy, read on demand
-  tests/          guards.sh, the table the guards are checked against
+install.sh                 dispatcher, one directory per agent CLI
+.claude-plugin/            marketplace.json: this repository as the agent-config marketplace
+plugins/devops-core/       the plugin
+  .claude-plugin/          plugin.json: MCP servers, the context7 key option
+  agents/                  devops (main), devops-implementer, troubleshooter, devops-reviewer
+  skills/                  delivery (branch, commit, PR conventions), learnings (the policy)
+  hooks/, scripts/         the learnings loop
+claude/                    policy, linked into ~/.claude
+  install.sh               links policy, installs the plugin
+  settings.json            model, sandbox, permissions, guard hooks, enabled plugins
+  CLAUDE.md                global instructions; graphify writes its block here
+  scripts/                 mutation guards for Bash and MCP
+  tests/                   guards.sh, the table the guards are checked against
 ```
 
-Every session starts as `devops` (`"agent": "devops"` in `settings.json`). Drop
-the key for a stock session, or override it per repository in
-`.claude/settings.local.json`.
+Plugin names are prefixed: the agents are `devops-core:devops`,
+`devops-core:troubleshooter` and so on, the skills `devops-core:delivery` and
+`devops-core:learnings`. Every session starts as `devops-core:devops`
+(`"agent"` in `settings.json`). Drop the key for a stock session, or override it
+per repository in `.claude/settings.local.json`.
+
+Why the split: a plugin can carry agents, skills, hooks and MCP servers, but its
+settings honour only `agent` and `subagentStatusLine`. Sandbox, permissions and
+model stay in `settings.json`. The guards could ship in the plugin, but a plugin
+is one click away from disabled in `/plugin`, and a safety layer must not be.
 
 ## MCP servers
 
-`install.sh` registers three, all read-only and all on the MCP guard's
-read-only list:
+All three are read-only and on the MCP guard's read-only list:
 
-- **context7** — current docs for tools, frameworks and libraries.
-- **aws-documentation** — AWS service docs, quotas and API references.
-- **headroom** — `headroom_compress`, `headroom_retrieve` and `headroom_stats`,
-  which pair with the Headroom proxy.
+- **context7** (plugin) — current docs for tools, frameworks and libraries. Its
+  key is a sensitive plugin option, kept out of settings files and process
+  arguments; set it with `/plugin configure devops-core@agent-config`.
+- **aws-documentation** (plugin) — AWS service docs, quotas and API references.
+- **headroom** (`headroom wrap claude`) — `headroom_compress`,
+  `headroom_retrieve` and `headroom_stats`, which pair with the Headroom proxy.
+  `wrap` registers it on every run, and serena with it.
+
+A plugin's tools are named `mcp__plugin_devops-core_<server>__<tool>`.
 
 Traffic reaches the Headroom proxy only in sessions started with
 `headroom wrap claude`; a bare `claude` goes straight to the API. `wrap` writes
@@ -54,10 +100,12 @@ dead proxy's address after a crash. Do not run `headroom init` in either form:
 repository's tracked file, and the local form adds hooks and a plugin to the
 project that `wrap` does not need.
 
-`devops`, `devops-implementer` and `troubleshooter` get context7 and
-aws-documentation. Subagents list
-each MCP tool by its full name in `tools:`; a server-wide wildcard there is not
-documented, so it is not relied on.
+`troubleshooter` and `devops-implementer` list what they may not use
+(`disallowedTools`) instead of what they may, so they inherit the MCP tools of
+any enabled plugin, a team's included. Writes stay covered: both guards
+hard-deny a subagent's live mutations and write-shaped MCP calls, and
+`troubleshooter` also drops serena, whose editing tools the guard trusts.
+`devops-reviewer` keeps a short allowlist.
 
 ## Skills
 
@@ -106,10 +154,25 @@ building and refreshing, including the shared multi-repository graph:
 
 ## Editing
 
-`~/.claude` holds symlinks, so changes flow both ways: an edit here is live, and
-a change made through `/config` or a plugin install shows up as a `git diff`.
-A **new** file is the exception: rerun `./install.sh` after adding an agent,
-skill, script or doc, or it silently does not exist.
+The policy files in `~/.claude` are symlinks, so changes flow both ways: an edit
+to `claude/` is live, and a change made through `/config` shows up as a
+`git diff`. A new guard script needs `./install.sh` to be linked.
+
+So does a plugin command: `claude plugin marketplace add` and
+`claude plugin install` at user scope rewrite `settings.json` (keys reordered,
+`"opus"` normalised to `"opus[1m]"`) even when it already declares everything.
+`install.sh` writes the file back; after a manual `/plugin install`, restore it
+with `git checkout claude/settings.json`.
+
+The plugin is installed from GitHub, so edits under `plugins/` reach a machine
+only after they are merged. To try them first, load the working copy for one
+session: `claude --plugin-dir ./plugins/devops-core`. To test the installer on a
+branch: `AGENT_CONFIG_MARKETPLACE="$PWD" ./install.sh claude`.
+
+The plugin has no `version`, so every commit on `main` is a new version, and the
+marketplace has `autoUpdate` on: a session refreshes it in the background and
+the next session loads the update. `claude plugin update devops-core@agent-config`
+forces it.
 
 Machine-local state stays out of the repo. `install.sh` adds
 `settings.local.json`, agent memory, Headroom's wrap files and the learnings
@@ -142,10 +205,82 @@ and `Edit(...)` path rules take effect; `Write(...)` is accepted and ignored.
 
 ## Learnings loop
 
-When a session ends, a headless child reads the transcript and appends a dated
+The plugin's `SessionEnd` hook starts it. When a session ends, a headless child reads the transcript and appends a dated
 proposal to `.claude/claude-md-review.md` in that repository. The next session
 there raises what is still unapplied. Nothing reaches `AGENTS.md` until you move
 it; mark the entry `— APPLIED` when you do. The review file stays local.
+
+## Your own plugin
+
+A team adds its own MCP servers, skills or agents as a plugin that depends on
+`devops-core`, in a marketplace of its own (any git host the team can clone
+from). Nothing in this repository changes. Example: Grafana for troubleshooting.
+
+```
+team-plugins/                          the team's marketplace repository
+  .claude-plugin/marketplace.json
+  plugins/team/
+    .claude-plugin/plugin.json
+    skills/grafana-triage/SKILL.md
+```
+
+`plugin.json` declares the dependency, asks each user for the URL and token, and
+defines the server:
+
+```json
+{
+  "name": "team",
+  "dependencies": ["devops-core@agent-config"],
+  "userConfig": {
+    "grafana_url":   { "type": "string", "title": "Grafana URL" },
+    "grafana_token": { "type": "string", "title": "Grafana token", "sensitive": true }
+  },
+  "mcpServers": {
+    "grafana": {
+      "command": "mcp-grafana",
+      "env": {
+        "GRAFANA_URL": "${user_config.grafana_url}",
+        "GRAFANA_API_KEY": "${user_config.grafana_token}"
+      }
+    }
+  }
+}
+```
+
+The skill carries what the agent cannot guess: which dashboards and data sources
+matter for which symptom. Its `description` decides whether it is picked, so name
+the symptoms — "Use when investigating latency, error rates, pod restarts or
+alerts" — not just the tool.
+
+`troubleshooter` inherits the server's tools and is told to look for a skill
+covering the system under investigation. Read-shaped tool names
+(`search_*`, `get_*`, `query_*`, `list_*`) pass the MCP guard; write-shaped ones
+ask in the main session and are denied to subagents. A server that needs to be
+trusted wholesale goes on `READ_ONLY_SERVERS` in the guard, by pull request here.
+
+Each user adds the marketplace and enables the plugin, for example in
+`.claude/settings.json` of the repositories where it applies, or with
+`/plugin marketplace add` and `/plugin install`.
+
+## Gateway or Bedrock
+
+The agents name models by alias (`opus`, `sonnet`), so the plugin runs
+unchanged behind a gateway. The mapping lives in `env` in settings — never in
+the plugin, which cannot set `env`:
+
+- `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` point Claude Code at a LiteLLM
+  gateway.
+- Either the gateway serves the names the aliases resolve to
+  (`claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`), or
+  `ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL` and
+  `ANTHROPIC_DEFAULT_HAIKU_MODEL` name what it serves. Haiku is needed even
+  though no agent names it: Claude Code uses it for background work.
+- The gateway must pass `anthropic-beta` headers through, or the 1M context
+  window and tool search stop working; without tool search every MCP tool's
+  schema loads up front.
+- With Headroom in front, the chain is Claude Code → Headroom → gateway →
+  Bedrock: Headroom's upstream has to point at the gateway. Check Headroom's
+  proxy options for the setting before relying on it.
 
 ## Requirements
 
