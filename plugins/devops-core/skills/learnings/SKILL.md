@@ -1,6 +1,6 @@
 ---
 name: learnings
-description: How to propose durable learnings for a repository's AGENTS.md. Use when a session produced something worth recording, at Step 6 of the devops agent, or when closing out a session headlessly.
+description: How to propose durable learnings for a repository's AGENTS.md. Use when a session produced something worth recording, at the closing step of an agent's workflow, or when closing out a session headlessly.
 ---
 
 # Proposing Learnings
@@ -16,6 +16,8 @@ Read this when Step 6 of `devops.md` has found something worth recording. It hol
 ## Where the draft goes
 
 Add a dated entry at the top of `.claude/claude-md-review.md` in the target repo — newest first, directly under the file's `#` title — creating the file with that title if it does not exist. Proposals sit in the review file until the user applies them.
+
+Run headlessly at the end of a session, you do not write the file: Claude Code refuses edits under `.claude/` in `-p` mode, and the hook that started you writes instead. Return the entry as your whole reply, preceded by a line `PROPOSAL`, or a line `NOTHING` and one sentence on why. Same heading, same wording rules as below.
 
 The heading format is a contract, not a style: `## YYYY-MM-DD — short title`. A `SessionStart` hook counts headings that do not carry the word `APPLIED` and raises them in the next session in this repository. Write a heading in any other shape and that count silently reads zero — the proposal is then in the file and reminds nobody. When the user applies an entry, append ` — APPLIED` to its heading rather than deleting it.
 
