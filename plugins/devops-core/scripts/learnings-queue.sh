@@ -8,8 +8,15 @@
 # share a 1.5 s budget (raised to the per-hook timeout, at most 60 s), and
 # SessionEnd stdout never reaches the model — by then there is no turn left to
 # inject into. So the session that is ending cannot summarise itself. A
-# headless `claude -p` does it in the background instead and appends a dated
-# entry to .claude/claude-md-review.md.
+# headless `claude -p` does it in the background instead and returns a dated
+# entry as text; this script inserts it into .claude/claude-md-review.md.
+#
+# Why the child returns text instead of editing the file: Claude Code guards
+# every path under .claude/ and refuses an edit there in -p mode even when Edit
+# is allowed (learnings.log, 2026-10-17: "refused as a sensitive-file edit"), so
+# a child that edits writes nothing. Returning text also leaves the child with
+# no write tool at all, which matters because the digest it reads carries
+# untrusted text from the session. The script decides where the text lands.
 #
 # Nothing here touches AGENTS.md or CLAUDE.md. The proposal sits in the review
 # file until a human applies it; learnings-pending.sh surfaces it at the start
@@ -95,8 +102,15 @@ jq -r '
     else empty end
 ' "$TRANSCRIPT" > "$DIGEST" 2>/dev/null
 
-# Too short to have learned anything worth a human's review.
-[[ "$(wc -l < "$DIGEST")" -ge 40 ]] || { rm -f "$DIGEST"; exit 0; }
+# Too short to have learned anything worth a human's review. Logged, so that
+# an empty learnings.log after a short session reads as a skip, not a failure.
+LINES="$(wc -l < "$DIGEST")"
+if [[ "$LINES" -lt 40 ]]; then
+  rm -f "$DIGEST"
+  printf '%s	session=%s	repo=%s	skipped	digest %s lines (< 40)\n' \
+    "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$SESSION" "$REPO" "$LINES" >>"$STATE/learnings.log"
+  exit 0
+fi
 
 : > "$LOCK"
 
@@ -118,8 +132,14 @@ What is specific to this run:
   belong to auto memory, not here.
 - Nobody can answer a question for you. Where the digest is ambiguous, leave
   the fact out rather than guessing at it.
-- Edit nothing but .claude/claude-md-review.md. If the session produced
-  nothing durable, write nothing at all and say that instead.
+- You cannot edit files. Read .claude/claude-md-review.md if it exists, so
+  you do not repeat a pending proposal; where yours supersedes one, say so in
+  the entry.
+- Reply with exactly one of these, and nothing before or after it:
+  - a line \`NOTHING\`, then one sentence on why, when nothing is durable;
+  - a line \`PROPOSAL\`, then the complete entry as it should appear in the
+    review file, starting with its \`## YYYY-MM-DD — short title\` heading.
+    The hook inserts it at the top of the file for you.
 EOF
 
 cd "$REPO" || exit 0
@@ -128,12 +148,13 @@ cd "$REPO" || exit 0
 # an orchestrator told to plan infrastructure and delegate, which is the wrong
 # system prompt for summarising a transcript. Defined inline so there is no
 # extra agent file to install.
-AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session transcript into a dated proposal for repository agent memory.","prompt":"You read a condensed Claude Code session transcript and write a dated proposal for the repository agent memory of that session. You edit one file and report nothing else. Follow the instructions in the prompt exactly."}}'
+AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session transcript into a dated proposal for repository agent memory.","prompt":"You read a condensed Claude Code session transcript and return a dated proposal for the repository agent memory of that session, as text. You edit nothing. Follow the instructions in the prompt exactly, including the reply format."}}'
+REVIEW="$REPO/.claude/claude-md-review.md"
 
 # --allowed-tools only pre-approves; it removes nothing. The digest carries
 # tool error text from the session, which is untrusted input, and settings.json
 # auto-allows sandboxed Bash — so without --disallowed-tools the child could
-# run commands a transcript talked it into. It needs to read and edit one file.
+# run commands a transcript talked it into. It only reads; this script writes.
 # --no-session-persistence keeps these runs off the `claude --resume` list.
 # --strict-mcp-config with no --mcp-config starts no MCP servers, so no
 # npx/uvx @latest round-trip at every session end. --bare would skip plugins
@@ -150,21 +171,46 @@ AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session tran
     --model sonnet \
     --agents "$AGENT_JSON" \
     --agent learnings-writer \
-    --allowed-tools Read Grep Glob Edit Write \
-    --disallowed-tools Bash WebFetch WebSearch NotebookEdit \
+    --allowed-tools Read Grep Glob \
+    --disallowed-tools Edit Write Bash WebFetch WebSearch NotebookEdit Agent \
     --no-session-persistence \
     --strict-mcp-config \
     --max-turns 15 \
     --max-budget-usd 1.00 \
     --output-format json)"
+  RESULT="$(printf '%s' "$OUT" | jq -r '.result // empty' 2>/dev/null)"
+  FIRST="$(printf '%s\n' "$RESULT" | head -n 1 | tr -d '[:space:]')"
+  ENTRY="$(printf '%s\n' "$RESULT" | tail -n +2)"
+  # Accept a proposal only in the agreed shape: a dated heading first, and a
+  # size no review entry needs. Anything else is logged, never written.
+  if [[ "$FIRST" == "PROPOSAL" ]] \
+     && printf '%s\n' "$ENTRY" | grep -m1 -v '^[[:space:]]*$' | grep -qE '^## [0-9]{4}-[0-9]{2}-[0-9]{2} ' \
+     && [[ "${#ENTRY}" -le 16384 ]]; then
+    mkdir -p "$(dirname "$REVIEW")"
+    [[ -f "$REVIEW" ]] || printf '# Proposed learnings\n' >"$REVIEW"
+    TMP="$(mktemp "$REVIEW.XXXXXX")"
+    # Newest first, directly under the file's `#` title (skills/learnings).
+    # ENVIRON, not -v: -v would expand backslash escapes inside the entry.
+    ENTRY="$ENTRY" awk '
+      !done && /^# / { print; print ""; print ENVIRON["ENTRY"]; done = 1; next }
+      { print }
+      END { if (!done) { print ""; print ENVIRON["ENTRY"] } }' "$REVIEW" >"$TMP" && mv "$TMP" "$REVIEW"
+    OUTCOME="proposed"
+    NOTE="$(printf '%s\n' "$ENTRY" | grep -m1 '^## ')"
+  elif [[ "$FIRST" == NOTHING* ]]; then
+    OUTCOME="nothing"
+    NOTE="$(printf '%s\n' "$ENTRY" | tr -s '[:space:]' ' ')"
+    [[ -n "${NOTE// /}" ]] || NOTE="$(printf '%s\n' "$RESULT" | head -n 1)"
+  else
+    OUTCOME="unparsed"
+    NOTE="$(printf '%s\n' "${RESULT:-$OUT}" | tr -s '[:space:]' ' ' | cut -c1-500)"
+  fi
   # One line per run, so cost and outcome can be totalled with awk later.
-  # Anything that is not the JSON result — a crash, a login error — is kept
-  # as it came, rather than lost to a parse failure.
-  printf '%s' "$OUT" | jq -r --arg s "$SESSION" --arg r "$REPO" '
+  printf '%s' "$OUT" | jq -r --arg s "$SESSION" --arg r "$REPO" --arg o "$OUTCOME" --arg n "$NOTE" '
     [ (now | todate), "session=\($s)", "repo=\($r)",
       "cost_usd=\(.total_cost_usd // "?")", "turns=\(.num_turns // "?")",
-      (.subtype // "?"), (.result // "" | gsub("\\s+"; " ")) ] | join("\t")' \
-    2>/dev/null || printf '%s\n' "$OUT"
+      (.subtype // "?"), $o, $n ] | join("\t")' \
+    2>/dev/null || printf '%s\tsession=%s\trepo=%s\t%s\t%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$SESSION" "$REPO" "$OUTCOME" "$NOTE"
   rm -f "$DIGEST"
 ) >>"$STATE/learnings.log" 2>&1 </dev/null &
 disown 2>/dev/null || true
