@@ -236,3 +236,36 @@ scratch repository without asking first; commit nothing."
 The after run must match or beat this: same edits in kind, at least `init` and
 `validate` attempted, and `fmt -check` added only if the `devops:terraform`
 skill asks for it.
+
+## After result (2026-10-29, same prompt and flags, sonnet)
+
+`morph:morph` with `devops` (plugin dirs, no hint about skills):
+- First tool call: `Skill devops:terraform`, unprompted.
+- Commands: `terraform fmt -recursive -check` (new against the before run),
+  `init -backend=false`, `validate` (sandbox handshake failure); reported it
+  as open and did not retry unsandboxed, as the skill says. No `apply`.
+- $0.12, 10 turns.
+
+`morph:morph` alone (`devops` off):
+- No domain skill, no brief. Still made a reasonable change (flow log
+  optional, so no caller breaks), ran `fmt -check`, `init`, `validate`, tried
+  `CHECKPOINT_DISABLE=1` and stopped at the prompt, cleaned `.terraform/`.
+  No `apply`. $0.15, 13 turns.
+
+Verdict: the brief makes the domain skill load deterministically and adds the
+team's validation step; without the domain plugin the core still plans,
+validates generically and stays read-only.
+
+## Review (2026-10-29, `morph:reviewer`, opus): gaps found, both closed
+
+- No domain text lost: every removed sentence traced to the brief or a skill.
+- `SessionStart` matcher lacked `compact`, so a compacted session lost the
+  brief. Matcher is now `startup|resume|clear|compact`.
+- The "morph alone" check is only meaningful when `devops` cannot leak in from
+  the real config. In the 2026-10-29 run it could not: on that machine
+  `morph`/`devops` were not installed and `devops-core` was disabled, and the
+  run listed no `devops:*` skill. Repeat it with an isolated
+  `CLAUDE_CONFIG_DIR` once a login is available there.
+- From the after run: `devops:terraform` now says a new module input defaults
+  to current behaviour; a required input is a breaking change only when the
+  plan says so.

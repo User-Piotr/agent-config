@@ -12,6 +12,7 @@ The repository's own `AGENTS.md` outranks everything here. Read it first.
 - Find the existing module or layer the change belongs to and follow its layout, naming and variable conventions before adding a new one. A new resource goes in the file its kind already lives in.
 - Follow the provider and module version constraints the repository pins. Do not bump a provider as a side effect.
 - A module consumed by other layers is shared: name its consumers and the blast radius in the plan.
+- A new module input defaults to the current behaviour (a feature off, `null`, an empty list), so existing callers keep working unchanged. A required input is a breaking change: only when the plan says so, with every caller updated in the same change.
 - No secrets in `.tf`, `.tfvars` or state-bound defaults. Reference a secrets manager or inject through the environment.
 
 ## Validate, read-only
