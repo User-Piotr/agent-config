@@ -233,6 +233,17 @@ review file to the global gitignore; API keys live in `.env`, ignored too.
 - `bash claude/tests/guards.sh` runs both guards against a table of real
   command shapes. Run it after touching either script.
 
+Terraform and OpenTofu providers start over a Unix socket, which the sandbox's
+seccomp filter blocks on Linux and WSL2. The only sandbox switch for that,
+`allowAllUnixSockets`, would also open `docker.sock` and the WSL interop socket,
+so instead the read-only subcommands (`init`, `validate`, `plan`, `fmt`,
+`providers`, `show`, `output`, `version`, `graph`, `state list|show`) are listed
+in `sandbox.excludedCommands` and in `permissions.allow`, and
+`CHECKPOINT_DISABLE=1` stops the version check. A call leaves the sandbox only
+when it is exactly one such command, so the agent `cd`s first and runs
+Terraform in the next call. `-chdir=` forms are deliberately not listed: a `*`
+before the subcommand would also approve `-chdir=x apply …`.
+
 The sandbox and `permissions` are separate, but coupled in one direction: a
 `Read(...)` rule in `permissions.deny` also blocks that path inside the Bash
 sandbox. Deny a CLI's credential file and the CLI stops working. Only `Read(...)`

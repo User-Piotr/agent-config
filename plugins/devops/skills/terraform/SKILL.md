@@ -34,6 +34,9 @@ Also run `tflint` and `trivy config .` when the repository uses them.
 
 ## Under the Bash sandbox
 
-`terraform validate` and `terraform plan` can fail with `plugin failed to negotiate the initial go-plugin protocol handshake`. Report it, hand the command to the user to run outside the sandbox, and do not retry it unsandboxed. Name the validation as still open in the hand-back.
+Providers talk to Terraform over a Unix socket, which the sandbox blocks. The read commands (`init`, `validate`, `plan`, `fmt`, `providers`, `show`, `output`, `version`, `graph`, `state list`, `state show`) are therefore excluded from the sandbox in settings and allowed without a prompt — but only when the call is that one command:
+
+- `cd` into the directory in one Bash call, then run `terraform validate` in the next; the working directory carries over. `cd dir && terraform validate`, `terraform -chdir=dir …`, pipes, redirects and `$(…)` keep the call sandboxed, and it fails.
+- If it still fails with `plugin failed to negotiate the initial go-plugin protocol handshake`, the setup is missing that exclusion: report it, hand the user the command, and name the validation as still open. Do not retry it with the sandbox disabled.
 
 `terraform init` leaves an untracked `.terraform/` directory; mention it rather than committing or deleting it.
