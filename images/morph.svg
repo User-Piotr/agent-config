@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="200" viewBox="0 0 240 200" role="img" aria-labelledby="t d">
+  <title id="t">Morph</title>
+  <desc id="d">Morph, the core agent: a small creature that changes shape and colour as it takes on a domain.</desc>
+
+  <!-- shadow -->
+  <ellipse cx="120" cy="168" rx="46" ry="7" fill="#000" opacity="0.15">
+    <animate attributeName="rx" values="46;38;46" dur="2.4s" repeatCount="indefinite"/>
+  </ellipse>
+
+  <g>
+    <animateTransform attributeName="transform" type="translate" values="0 0; 0 -10; 0 0" dur="2.4s" repeatCount="indefinite" calcMode="spline" keySplines=".4 0 .6 1; .4 0 .6 1"/>
+
+    <!-- body: round blob -> square -> round, colour: core -> devops -> qa -> core -->
+    <rect x="70" y="58" width="100" height="100" rx="50" fill="#d97757">
+      <animate attributeName="rx" values="50;50;14;14;34;34;50" keyTimes="0;.15;.3;.5;.65;.85;1" dur="7.2s" repeatCount="indefinite"/>
+      <animate attributeName="fill" values="#d97757;#d97757;#2f9e8f;#2f9e8f;#7c5cc4;#7c5cc4;#d97757" keyTimes="0;.15;.3;.5;.65;.85;1" dur="7.2s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- antenna -->
+    <line x1="120" y1="58" x2="120" y2="38" stroke="#3b3b3b" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="120" cy="34" r="6" fill="#f2c94c">
+      <animate attributeName="r" values="6;8;6" dur="1.2s" repeatCount="indefinite"/>
+    </circle>
+
+    <!-- eyes -->
+    <ellipse cx="102" cy="100" rx="8" ry="10" fill="#fff"/>
+    <ellipse cx="138" cy="100" rx="8" ry="10" fill="#fff"/>
+    <ellipse cx="104" cy="102" rx="4" ry="5" fill="#222">
+      <animate attributeName="ry" values="5;5;0.6;5;5" keyTimes="0;.9;.93;.96;1" dur="4s" repeatCount="indefinite"/>
+    </ellipse>
+    <ellipse cx="140" cy="102" rx="4" ry="5" fill="#222">
+      <animate attributeName="ry" values="5;5;0.6;5;5" keyTimes="0;.9;.93;.96;1" dur="4s" repeatCount="indefinite"/>
+    </ellipse>
+
+    <!-- smile -->
+    <path d="M104 126 Q120 138 136 126" fill="none" stroke="#222" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- label: which plugin the colour stands for -->
+  <text x="120" y="194" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#888">
+    <tspan>morph<animate attributeName="opacity" values="1;1;0;0;0;0;1" keyTimes="0;.15;.3;.5;.65;.85;1" dur="7.2s" repeatCount="indefinite"/></tspan>
+  </text>
+  <text x="120" y="194" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#888" opacity="0">
+    <animate attributeName="opacity" values="0;0;1;1;0;0;0" keyTimes="0;.15;.3;.5;.65;.85;1" dur="7.2s" repeatCount="indefinite"/>+ devops</text>
+  <text x="120" y="194" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#888" opacity="0">
+    <animate attributeName="opacity" values="0;0;0;0;1;1;0" keyTimes="0;.15;.3;.5;.65;.85;1" dur="7.2s" repeatCount="indefinite"/>+ your plugin</text>
+</svg>

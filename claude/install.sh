@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Install this directory's Claude Code configuration into ~/.claude.
-# See ../README.md for what lands where and why.
+# See ../docs/reference.md for what lands where and why.
 set -euo pipefail
 shopt -s nullglob   # an empty directory must skip its loop, not link a literal glob
 
