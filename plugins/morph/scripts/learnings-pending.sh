@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# plugins/devops-core/scripts/learnings-pending.sh
+# plugins/morph/scripts/learnings-pending.sh
 #
 # SessionStart hook. Reports unapplied learnings proposals left by earlier
 # sessions in this repository.

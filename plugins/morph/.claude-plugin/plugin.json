@@ -1,0 +1,19 @@
+{
+  "name": "morph",
+  "description": "Domain-free agent team for Claude Code: morph orchestrator, implementer, reviewer and investigator agents, delivery and learnings skills, and the context7 documentation server",
+  "userConfig": {
+    "context7_api_key": {
+      "type": "string",
+      "title": "Context7 API key",
+      "description": "Key from https://context7.com",
+      "sensitive": true
+    }
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "env": { "CONTEXT7_API_KEY": "${user_config.context7_api_key}" }
+    }
+  }
+}

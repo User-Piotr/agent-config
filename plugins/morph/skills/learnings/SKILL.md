@@ -5,7 +5,7 @@ description: How to propose durable learnings for a repository's AGENTS.md. Use 
 
 # Proposing Learnings
 
-Read this when Step 6 of `devops.md` has found something worth recording. It holds what qualifies, where the draft goes, and how to word it. The draft is always a proposal for the user to review — never a direct edit to `AGENTS.md` or `CLAUDE.md`.
+Read this when Step 6 of `morph.md` has found something worth recording. It holds what qualifies, where the draft goes, and how to word it. The draft is always a proposal for the user to review — never a direct edit to `AGENTS.md` or `CLAUDE.md`.
 
 ## What qualifies
 
@@ -41,5 +41,5 @@ Examples and defaults use `dummy` rather than a real client or account name.
 The first carries a consequence because the rule is not self-evident. The second names what owns the file, so nobody re-litigates it. The third is short because it needs nothing more. None of them record an event.
 
 - English, one line per bullet, never a paragraph. The review file is a staging area for text pasted verbatim into the target file, so it must already read like the target file.
-- For each proposed change, write the exact bullet(s) to add, edit, or remove, targeted at `AGENTS.md`'s `## DevOps Conventions (agent-maintained)` section (creating that section if missing when the user applies it).
+- For each proposed change, write the exact bullet(s) to add, edit, or remove, targeted at the agent-maintained section of `AGENTS.md`: any `## … (agent-maintained)` heading already present, else `## Conventions (agent-maintained)` (creating that section if missing when the user applies it). An existing `## DevOps Conventions (agent-maintained)` section keeps its name.
 - Claude Code reads `AGENTS.md` on its own only when the repository has no `CLAUDE.md` (v2.1.277 and later). Where both exist and `CLAUDE.md` lacks an `@AGENTS.md` import at the top, say that it needs one.
