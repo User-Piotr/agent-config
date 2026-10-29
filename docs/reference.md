@@ -1,0 +1,347 @@
+# agent-config reference
+
+The full picture behind the [README](../README.md). The setup has three parts. The **`morph` plugin** is the domain-free
+core: an orchestrator agent with three subagents, the delivery and learnings
+skills, the learnings loop and the context7 server. A **domain plugin**
+(`devops` today) adds the knowledge for one field: skills, a documentation
+server, and a short brief injected when a session or subagent starts.
+**`claude/`** carries the policy a plugin cannot or should not: sandbox,
+permissions, the mutation guards and the global instructions. This repository is
+also the `agent-config` plugin marketplace, so a team extends the setup with a
+plugin of its own instead of a fork.
+
+Domain plugins are installed but **off until you switch one on** in `/plugin`.
+The switch is global and applies in every repository. It lands in the tracked
+`claude/settings.json` as a one-line change to `enabledPlugins`: commit it to
+share the choice, or leave it as a local difference.
+
+## Install
+
+```bash
+git clone https://github.com/User-Piotr/agent-config.git ~/Repositories/agent-config
+cd ~/Repositories/agent-config
+cp .env.example .env    # optional: CONTEXT7_API_KEY
+./install.sh
+```
+
+Clone somewhere permanent. `install.sh` symlinks the policy files into
+`~/.claude`, so the clone *is* the installed policy; a clone under `/tmp` leaves
+dangling links after the next reboot. It also installs `morph` and `devops` from
+GitHub (`devops` stays off) and, when `.env` has a key, stores it as `morph`'s
+context7 option. Restart Claude Code after the first install, then switch the
+domain plugin on with `/plugin` or `claude plugin enable devops@agent-config`.
+
+### Migrating from `devops-core`
+
+`devops-core` was split into `morph` and `devops`. `git pull` and `./install.sh`
+do it: the installer installs both, uninstalls `devops-core@agent-config`, and
+drops the user-scope `context7` and `awslabs.aws-documentation-mcp-server`
+registrations the plugins replace. If it stopped halfway, finish by hand:
+
+```bash
+claude plugin uninstall devops-core@agent-config
+claude plugin install morph@agent-config
+claude plugin install devops@agent-config
+git checkout claude/settings.json
+```
+
+Agents are renamed: `devops-core:devops` is now `morph:morph`,
+`devops-implementer` is `morph:implementer`, `troubleshooter` is
+`morph:investigator`, `devops-reviewer` is `morph:reviewer`. The MCP tool
+prefixes change with the plugin names (`mcp__plugin_morph_context7`,
+`mcp__plugin_devops_aws-documentation`).
+
+Agent memory lives in each repository's working tree, so the installer only
+prints the renames. In every repository that has the old directories:
+
+```bash
+cd .claude/agent-memory-local
+mv devops-core-devops-implementer morph-implementer
+mv devops-core-troubleshooter morph-investigator
+```
+
+A repository's `## DevOps Conventions (agent-maintained)` section in `AGENTS.md`
+keeps its name.
+
+### The plugins alone
+
+Without this repository's policy:
+`/plugin marketplace add User-Piotr/agent-config`, then
+`/plugin install morph@agent-config` and, for the DevOps knowledge,
+`/plugin install devops@agent-config` and enable it.
+
+## What's inside
+
+```
+install.sh                 dispatcher, one directory per agent CLI
+.claude-plugin/            marketplace.json: this repository as the agent-config marketplace
+plugins/morph/             the core plugin
+  .claude-plugin/          plugin.json: the context7 server and its key option
+  agents/                  morph (main), implementer, reviewer, investigator
+  skills/                  delivery (branch, commit, PR conventions), learnings (the policy)
+  hooks/, scripts/         the learnings loop
+plugins/devops/            the DevOps domain plugin (depends on morph, off by default)
+  .claude-plugin/          plugin.json: the aws-documentation server
+  skills/                  terraform, helm, kubernetes, aws, pipelines
+  hooks/, scripts/         brief.sh, run at SessionStart and SubagentStart
+claude/                    policy, linked into ~/.claude
+  install.sh               links policy, installs the plugins
+  settings.json            model, sandbox, permissions, guard hooks, enabled plugins
+  CLAUDE.md                global instructions; graphify writes its block here
+  scripts/                 mutation guards for Bash and MCP
+  tests/                   guards.sh, the table the guards are checked against
+```
+
+Plugin names are prefixed: the agents are `morph:morph`, `morph:investigator`
+and so on, the skills `morph:delivery`, `morph:learnings`, `devops:terraform`.
+Every session starts as `morph:morph` (`"agent"` in `settings.json`). Drop the
+key for a stock session, or override it per repository in
+`.claude/settings.local.json`.
+
+How a domain reaches the agents: `morph` itself knows no tools and no live
+systems. When the session or a subagent starts, the enabled domain plugin's
+`brief.sh` returns a short brief (`hookSpecificOutput.additionalContext`) that
+names its skills, its live-mutation rules and its documentation server. `morph`
+treats the brief as binding and loads the skills it names before working in the
+domain; the skills carry the detail and cost context only when loaded. With
+`devops` off there is no brief and no `devops:*` skill.
+
+Why the split: a plugin can carry agents, skills, hooks and MCP servers, but its
+settings honour only `agent` and `subagentStatusLine`. Sandbox, permissions and
+model stay in `settings.json`. The guards could ship in the plugin, but a plugin
+is one click away from disabled in `/plugin`, and a safety layer must not be.
+
+## MCP servers
+
+All three are read-only and on the MCP guard's read-only list:
+
+- **context7** (`morph`) — current docs for tools, frameworks and libraries. Its
+  key is a sensitive plugin option, kept out of settings files and process
+  arguments; set it with `/plugin configure morph@agent-config`.
+- **aws-documentation** (`devops`) — AWS service docs, quotas and API
+  references. Present only while `devops` is on.
+- **headroom** (`headroom wrap claude`) — `headroom_compress`,
+  `headroom_retrieve` and `headroom_stats`, which pair with the Headroom proxy.
+  `wrap` registers it on every run, and serena with it.
+
+A plugin's tools are named `mcp__plugin_<plugin>_<server>__<tool>`.
+
+Traffic reaches the Headroom proxy only in sessions started with
+`headroom wrap claude`; a bare `claude` goes straight to the API. `wrap` writes
+its routing to the repository's untracked `.claude/settings.local.json` and
+removes it when the session ends, leaving only a selfheal hook that clears a
+dead proxy's address after a crash. Do not run `headroom init` in either form:
+`--global` writes the routing into `~/.claude/settings.json`, which is this
+repository's tracked file, and the local form adds hooks and a plugin to the
+project that `wrap` does not need.
+
+`investigator` and `implementer` list what they may not use
+(`disallowedTools`) instead of what they may, so they inherit the MCP tools of
+any enabled plugin, a team's included. Writes stay covered: both guards
+hard-deny a subagent's live mutations and write-shaped MCP calls, and
+`investigator` also drops serena, whose editing tools the guard trusts.
+`reviewer` keeps a short allowlist.
+
+## Skills
+
+`settings.json` keeps the skill list short, because every enabled skill costs
+its description in context on every turn:
+
+- `syncClaudeAiSkills: false` drops the skills synced from claude.ai (docx,
+  pptx, pdf, morning, computer-use, ...).
+- `skillOverrides` switches off the bundled skills this setup does not use.
+  Set a name to `"on"` to bring it back.
+
+`skillOverrides` does not reach a plugin: its skills show as "locked by plugin"
+and stay on, and so do its agents. The caveman plugin therefore loads all its
+skills and its three `cavecrew-*` agents. Whether it stays is an all-or-nothing
+decision about the plugin. Sessions start in its `lite` mode
+(`CAVEMAN_DEFAULT_MODE` in `env`; the plugin's own default is `full`), and
+`/caveman <level>` switches for the current session.
+
+## Knowledge graph
+
+`install.sh` installs graphify, and `graphify install --platform claude` adds
+its skill and writes a block into `CLAUDE.md` — through the symlink, so that
+block is part of this repository.
+
+graphify can build its graph from code alone, with no LLM call and no network,
+for the file types it parses. Coverage depends on the repository: some come out
+detailed, others nearly empty until `/graphify` runs its LLM pass. Run the two
+commands and check what came out before relying on the graph:
+
+```bash
+graphify update . --no-cluster
+graphify cluster-only . --no-label --no-viz
+```
+
+Every query then runs offline against `graphify-out/graph.json`:
+
+```bash
+graphify affected "<node>"          # what references it, with file:line
+graphify god-nodes                  # the most connected nodes
+graphify query "<question>" --budget 1500
+```
+
+The output lands in `graphify-out/` at the repository root. Step-by-step
+building and refreshing, including the shared multi-repository graph:
+[graphify.md](graphify.md).
+
+## Editing
+
+The policy files in `~/.claude` are symlinks, so changes flow both ways: an edit
+to `claude/` is live, and a change made through `/config` shows up as a
+`git diff`. A new guard script needs `./install.sh` to be linked.
+
+So does a plugin command: `claude plugin marketplace add` and
+`claude plugin install` at user scope rewrite `settings.json` (keys reordered,
+`"opus"` normalised to `"opus[1m]"`) even when it already declares everything.
+`install.sh` writes the file back; after a manual `/plugin install`, restore it
+with `git checkout claude/settings.json`.
+
+The plugin is installed from GitHub, so edits under `plugins/` reach a machine
+only after they are merged. To try them first, load the working copy for one
+session: `claude --plugin-dir ./plugins/morph` (add `--plugin-dir ./plugins/devops` for the domain). To test the installer on a
+branch: `AGENT_CONFIG_MARKETPLACE="$PWD" ./install.sh claude`.
+
+The plugin has no `version`, so every commit on `main` is a new version, and the
+marketplace has `autoUpdate` on: a session refreshes it in the background and
+the next session loads the update. `claude plugin update morph@agent-config`
+forces it.
+
+Machine-local state stays out of the repo. `install.sh` adds
+`settings.local.json`, agent memory, Headroom's wrap files and the learnings
+review file to the global gitignore; API keys live in `.env`, ignored too.
+
+## Safety
+
+- `block-mutations.sh` reads every Bash call. Reads, plans, dry-runs and
+  `git commit` pass. Live mutations, `git push`, and `gh` or `az repos` writes
+  ask first, and are denied outright for any subagent, which cannot answer a
+  prompt. It matches text: `./deploy.sh` or `make apply` pass unseen, so keep
+  least-privilege credentials behind it where you can.
+- `permissions.ask` in `settings.json` is the second layer for the same Bash
+  commands: Terraform, OpenTofu and Terragrunt state changes, helmfile, Argo CD
+  app writes, `git push`, and the `gh` and `az repos` writes that publish.
+  Claude Code matches these itself, inside `&&`, `$()` and loops, and they hold
+  even though the sandbox auto-allows Bash. kubectl and helm are left to the
+  guard alone, since a prefix rule would also prompt on every dry-run.
+- `block-mcp-mutations.sh` does for MCP tools what `block-mutations.sh` does
+  for Bash, judged by tool name.
+- Both log each decision to `~/.claude/logs/`, recording the judged binary or
+  tool name, never the full command line.
+- `bash claude/tests/guards.sh` runs both guards against a table of real
+  command shapes. Run it after touching either script.
+
+Terraform and OpenTofu providers start over a Unix socket, which the sandbox's
+seccomp filter blocks on Linux and WSL2. The only sandbox switch for that,
+`allowAllUnixSockets`, would also open `docker.sock` and the WSL interop socket,
+so instead the read-only subcommands (`init`, `validate`, `plan`, `fmt`,
+`providers`, `show`, `output`, `version`, `graph`, `state list|show`) are listed
+in `sandbox.excludedCommands` and in `permissions.allow`, and
+`CHECKPOINT_DISABLE=1` stops the version check. A call leaves the sandbox only
+when it is exactly one such command, so the agent `cd`s first and runs
+Terraform in the next call. `-chdir=` forms are deliberately not listed: a `*`
+before the subcommand would also approve `-chdir=x apply …`.
+
+The sandbox and `permissions` are separate, but coupled in one direction: a
+`Read(...)` rule in `permissions.deny` also blocks that path inside the Bash
+sandbox. Deny a CLI's credential file and the CLI stops working. Only `Read(...)`
+and `Edit(...)` path rules take effect; `Write(...)` is accepted and ignored.
+
+## Learnings loop
+
+The plugin's `SessionEnd` hook starts it. When a session ends, a headless child reads the transcript and appends a dated
+proposal to `.claude/claude-md-review.md` in that repository. The next session
+there raises what is still unapplied. Nothing reaches `AGENTS.md` until you move
+it; mark the entry `— APPLIED` when you do. The review file stays local.
+
+## Your own plugin
+
+A team adds its own domain as a plugin that depends on `morph`, in a marketplace
+of its own (any git host the team can clone from). Nothing in this repository
+changes. `devops` is the model to copy: skills for the knowledge, an optional
+MCP server, and two hooks that inject a short brief. Example: Grafana for
+investigation.
+
+```
+team-plugins/                          the team's marketplace repository
+  .claude-plugin/marketplace.json      list the plugin with "defaultEnabled": false
+  plugins/team/
+    .claude-plugin/plugin.json
+    hooks/hooks.json                   SessionStart and SubagentStart -> scripts/brief.sh
+    scripts/brief.sh
+    skills/grafana-triage/SKILL.md
+```
+
+`plugin.json` declares the dependency, asks each user for the URL and token, and
+defines the server:
+
+```json
+{
+  "name": "team",
+  "dependencies": ["morph@agent-config"],
+  "userConfig": {
+    "grafana_url":   { "type": "string", "title": "Grafana URL" },
+    "grafana_token": { "type": "string", "title": "Grafana token", "sensitive": true }
+  },
+  "mcpServers": {
+    "grafana": {
+      "command": "mcp-grafana",
+      "env": {
+        "GRAFANA_URL": "${user_config.grafana_url}",
+        "GRAFANA_API_KEY": "${user_config.grafana_token}"
+      }
+    }
+  }
+}
+```
+
+The skill carries what the agent cannot guess: which dashboards and data sources
+matter for which symptom. Its `description` decides whether it is picked, so name
+the symptoms — "Use when investigating latency, error rates, pod restarts or
+alerts" — not just the tool.
+
+`brief.sh` is what makes the agents use the skill. Registered for both events in
+`hooks/hooks.json`, it reads `hook_event_name` from stdin and prints
+`{"hookSpecificOutput": {"hookEventName": <event>, "additionalContext": <brief>}}`.
+Keep the brief under about 15 lines: what the domain is, what counts as a live
+system, which skills to load and when ("before any Grafana query load
+`team:grafana-triage`"), and which documentation servers exist. `morph` and its
+subagents treat it as binding. See `plugins/devops/scripts/brief.sh`.
+
+`morph:investigator` inherits the server's tools and is told to look for a skill
+covering the system under investigation. Read-shaped tool names
+(`search_*`, `get_*`, `query_*`, `list_*`) pass the MCP guard; write-shaped ones
+ask in the main session and are denied to subagents. A server that needs to be
+trusted wholesale goes on `READ_ONLY_SERVERS` in the guard, by pull request here.
+
+Each user adds the marketplace and switches the plugin on with
+`/plugin marketplace add`, `/plugin install` and `/plugin`. The switch is
+global: the brief applies in every repository while the plugin is on.
+
+## Gateway or Bedrock
+
+The agents name models by alias (`opus`, `sonnet`), so the plugin runs
+unchanged behind a gateway. The mapping lives in `env` in settings — never in
+the plugin, which cannot set `env`:
+
+- `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` point Claude Code at a LiteLLM
+  gateway.
+- Either the gateway serves the names the aliases resolve to
+  (`claude-opus-5-5`, `claude-sonnet-5-5`, `claude-haiku-5-5`), or
+  `ANTHROPIC_DEFAULT_OPUS_MODEL`, `ANTHROPIC_DEFAULT_SONNET_MODEL` and
+  `ANTHROPIC_DEFAULT_HAIKU_MODEL` name what it serves. Haiku is needed even
+  though no agent names it: Claude Code uses it for background work.
+- The gateway must pass `anthropic-beta` headers through, or the 1M context
+  window and tool search stop working; without tool search every MCP tool's
+  schema loads up front.
+- With Headroom in front, the chain is Claude Code → Headroom → gateway →
+  Bedrock: Headroom's upstream has to point at the gateway. Check Headroom's
+  proxy options for the setting before relying on it.
+
+## Requirements
+
+`bash`, `jq`, `git`, `uv`, `node` and the `claude` CLI. On Linux and WSL2 the
+sandbox also needs `bubblewrap` and `socat`; without them Claude Code warns once
+and runs commands unsandboxed. macOS needs neither.

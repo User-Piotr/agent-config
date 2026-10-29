@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330" role="img" aria-labelledby="t d" font-family="ui-sans-serif, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <title id="t">How agent-config fits together</title>
+  <desc id="d">The morph plugin holds the agents. Domain plugins such as devops add skills, MCP servers and a brief injected at session and subagent start. Policy in claude/ wraps everything: sandbox, permissions and mutation guards.</desc>
+
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- policy frame -->
+  <rect x="8" y="8" width="744" height="314" rx="16" fill="#f6f3ee" stroke="#c9c2b8" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="28" y="36" font-size="15" font-weight="700" fill="#5a5148">claude/  policy</text>
+  <text x="150" y="36" font-size="13" fill="#7a7168">sandbox · permissions · mutation guards · CLAUDE.md</text>
+
+  <!-- morph -->
+  <rect x="32" y="58" width="330" height="240" rx="12" fill="#fbe9e2" stroke="#d97757" stroke-width="2"/>
+  <text x="52" y="86" font-size="17" font-weight="700" fill="#9a4a30">morph</text>
+  <text x="122" y="86" font-size="12" fill="#9a4a30">core plugin · always on</text>
+
+  <rect x="52" y="102" width="290" height="42" rx="8" fill="#fff" stroke="#e5b3a1"/>
+  <text x="66" y="128" font-size="14" font-weight="700" fill="#333">morph:morph</text>
+  <text x="186" y="128" font-size="12" fill="#666">plans · delegates · reviews</text>
+
+  <rect x="52" y="154" width="92" height="36" rx="8" fill="#fff" stroke="#e5b3a1"/>
+  <text x="98" y="177" font-size="12" text-anchor="middle" fill="#333">implementer</text>
+  <rect x="151" y="154" width="92" height="36" rx="8" fill="#fff" stroke="#e5b3a1"/>
+  <text x="197" y="177" font-size="12" text-anchor="middle" fill="#333">investigator</text>
+  <rect x="250" y="154" width="92" height="36" rx="8" fill="#fff" stroke="#e5b3a1"/>
+  <text x="296" y="177" font-size="12" text-anchor="middle" fill="#333">reviewer</text>
+  <path d="M120 144 V154 M197 144 V154 M274 144 V154" stroke="#d97757" stroke-width="1.5"/>
+
+  <text x="52" y="220" font-size="12" fill="#555">skills  delivery · learnings</text>
+  <text x="52" y="242" font-size="12" fill="#555">MCP     context7</text>
+  <text x="52" y="264" font-size="12" fill="#555">hooks   learnings loop</text>
+
+  <!-- devops -->
+  <rect x="420" y="58" width="310" height="140" rx="12" fill="#e2f3f0" stroke="#2f9e8f" stroke-width="2"/>
+  <text x="440" y="86" font-size="17" font-weight="700" fill="#1f6b61">devops</text>
+  <text x="516" y="86" font-size="12" fill="#1f6b61">domain plugin · opt-in</text>
+  <text x="440" y="112" font-size="12" fill="#555">skills  terraform · helm · kubernetes</text>
+  <text x="440" y="130" font-size="12" fill="#555">        aws · pipelines</text>
+  <text x="440" y="152" font-size="12" fill="#555">MCP     aws-documentation</text>
+  <text x="440" y="174" font-size="12" fill="#555">brief   at session and subagent start</text>
+
+  <!-- your plugin -->
+  <rect x="420" y="218" width="310" height="80" rx="12" fill="#efeaf8" stroke="#7c5cc4" stroke-width="2" stroke-dasharray="6 5"/>
+  <text x="440" y="246" font-size="17" font-weight="700" fill="#5a3f9e">your plugin</text>
+  <text x="440" y="270" font-size="12" fill="#555">qa, grafana, … : skills, MCP, a brief</text>
+  <text x="440" y="288" font-size="12" fill="#555">depends on morph, nothing else changes</text>
+
+  <!-- arrows: brief into morph -->
+  <path d="M420 128 C395 128 380 123 362 123" fill="none" stroke="#888" stroke-width="2" marker-end="url(#a)"/>
+  <path d="M420 258 C390 258 380 200 362 190" fill="none" stroke="#888" stroke-width="2" stroke-dasharray="5 4" marker-end="url(#a)"/>
+</svg>
