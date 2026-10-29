@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# plugins/devops-core/scripts/learnings-queue.sh
+# plugins/morph/scripts/learnings-queue.sh
 #
 # SessionEnd hook. Queues a learnings proposal for the repository the session
 # ran in, then returns immediately.
@@ -69,7 +69,7 @@ find "$STATE/digests" -type f -name '*.txt' -mtime +2 -delete 2>/dev/null
 
 POLICY="${CLAUDE_PLUGIN_ROOT}/skills/learnings/SKILL.md"
 if [[ ! -f "$POLICY" ]]; then
-  echo "learnings-queue: $POLICY missing, reinstall the devops-core plugin" >>"$STATE/learnings.log"
+  echo "learnings-queue: $POLICY missing, reinstall the morph plugin" >>"$STATE/learnings.log"
   exit 0
 fi
 
@@ -144,8 +144,8 @@ EOF
 
 cd "$REPO" || exit 0
 # --agent pins what this child runs as. Without it the child inherits the
-# `agent` key from settings.json, so it would boot with the devops prompt —
-# an orchestrator told to plan infrastructure and delegate, which is the wrong
+# `agent` key from settings.json, so it would boot with the morph prompt —
+# an orchestrator told to plan and delegate, which is the wrong
 # system prompt for summarising a transcript. Defined inline so there is no
 # extra agent file to install.
 AGENT_JSON='{"learnings-writer":{"description":"Turns one condensed session transcript into a dated proposal for repository agent memory.","prompt":"You read a condensed Claude Code session transcript and return a dated proposal for the repository agent memory of that session, as text. You edit nothing. Follow the instructions in the prompt exactly, including the reply format."}}'

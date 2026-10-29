@@ -1,4 +1,5 @@
 {
+  "syncClaudeAiSkills": false,
   "env": {
     "ENABLE_TOOL_SEARCH": "true",
     "CAVEMAN_DEFAULT_MODE": "lite"
@@ -8,9 +9,73 @@
     "pr": "",
     "sessionUrl": false
   },
-  "model": "opus",
-  "plansDirectory": ".claude/plans",
+  "permissions": {
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Edit(~/.ssh/**)",
+      "Read(~/.aws/credentials)",
+      "Edit(~/.aws/credentials)",
+      "Read(~/.claude/.credentials.json)",
+      "Edit(~/.claude/.credentials.json)",
+      "Edit(~/.zshrc)",
+      "Edit(~/.bashrc)",
+      "Edit(~/.gitconfig)",
+      "Read(**/.env)",
+      "Edit(**/.env)"
+    ],
+    "ask": [
+      "Bash(terraform apply *)",
+      "Bash(terraform destroy *)",
+      "Bash(terraform import *)",
+      "Bash(terraform force-unlock *)",
+      "Bash(terraform state rm *)",
+      "Bash(terraform state mv *)",
+      "Bash(terraform state push *)",
+      "Bash(terraform workspace delete *)",
+      "Bash(tofu apply *)",
+      "Bash(tofu destroy *)",
+      "Bash(tofu import *)",
+      "Bash(tofu force-unlock *)",
+      "Bash(tofu state rm *)",
+      "Bash(tofu state mv *)",
+      "Bash(tofu state push *)",
+      "Bash(tofu workspace delete *)",
+      "Bash(terragrunt apply *)",
+      "Bash(terragrunt destroy *)",
+      "Bash(terragrunt run-all apply *)",
+      "Bash(terragrunt run-all destroy *)",
+      "Bash(helmfile apply *)",
+      "Bash(helmfile sync *)",
+      "Bash(helmfile destroy *)",
+      "Bash(helmfile delete *)",
+      "Bash(argocd app sync *)",
+      "Bash(argocd app delete *)",
+      "Bash(argocd app rollback *)",
+      "Bash(argocd app set *)",
+      "Bash(argocd app patch *)",
+      "Bash(argocd app create *)",
+      "Bash(argocd app terminate-op *)",
+      "Bash(git push *)",
+      "Bash(gh pr create *)",
+      "Bash(gh pr merge *)",
+      "Bash(gh release create *)",
+      "Bash(gh repo delete *)",
+      "Bash(gh secret set *)",
+      "Bash(gh workflow run *)",
+      "Bash(az repos pr create *)"
+    ]
+  },
+  "model": "opus[1m]",
   "disableClaudeAiConnectors": true,
+  "skillOverrides": {
+    "dataviz": "off",
+    "artifact-design": "off",
+    "artifact-diagramming": "off",
+    "artifact-capabilities": "off",
+    "claude-api": "off",
+    "keybindings-help": "off",
+    "run": "off"
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -41,7 +106,8 @@
   },
   "enabledPlugins": {
     "caveman@caveman": true,
-    "devops-core@agent-config": true
+    "morph@agent-config": true,
+    "devops@agent-config": false
   },
   "extraKnownMarketplaces": {
     "agent-config": {
@@ -92,73 +158,8 @@
       ]
     }
   },
-  "permissions": {
-    "ask": [
-      "Bash(terraform apply *)",
-      "Bash(terraform destroy *)",
-      "Bash(terraform import *)",
-      "Bash(terraform force-unlock *)",
-      "Bash(terraform state rm *)",
-      "Bash(terraform state mv *)",
-      "Bash(terraform state push *)",
-      "Bash(terraform workspace delete *)",
-      "Bash(tofu apply *)",
-      "Bash(tofu destroy *)",
-      "Bash(tofu import *)",
-      "Bash(tofu force-unlock *)",
-      "Bash(tofu state rm *)",
-      "Bash(tofu state mv *)",
-      "Bash(tofu state push *)",
-      "Bash(tofu workspace delete *)",
-      "Bash(terragrunt apply *)",
-      "Bash(terragrunt destroy *)",
-      "Bash(terragrunt run-all apply *)",
-      "Bash(terragrunt run-all destroy *)",
-      "Bash(helmfile apply *)",
-      "Bash(helmfile sync *)",
-      "Bash(helmfile destroy *)",
-      "Bash(helmfile delete *)",
-      "Bash(argocd app sync *)",
-      "Bash(argocd app delete *)",
-      "Bash(argocd app rollback *)",
-      "Bash(argocd app set *)",
-      "Bash(argocd app patch *)",
-      "Bash(argocd app create *)",
-      "Bash(argocd app terminate-op *)",
-      "Bash(git push *)",
-      "Bash(gh pr create *)",
-      "Bash(gh pr merge *)",
-      "Bash(gh release create *)",
-      "Bash(gh repo delete *)",
-      "Bash(gh secret set *)",
-      "Bash(gh workflow run *)",
-      "Bash(az repos pr create *)"
-    ],
-    "deny": [
-      "Read(~/.ssh/**)",
-      "Edit(~/.ssh/**)",
-      "Read(~/.aws/credentials)",
-      "Edit(~/.aws/credentials)",
-      "Read(~/.claude/.credentials.json)",
-      "Edit(~/.claude/.credentials.json)",
-      "Edit(~/.zshrc)",
-      "Edit(~/.bashrc)",
-      "Edit(~/.gitconfig)",
-      "Read(**/.env)",
-      "Edit(**/.env)"
-    ]
-  },
   "effortLevel": "high",
-  "syncClaudeAiSkills": false,
-  "skillOverrides": {
-    "dataviz": "off",
-    "artifact-design": "off",
-    "artifact-diagramming": "off",
-    "artifact-capabilities": "off",
-    "claude-api": "off",
-    "keybindings-help": "off",
-    "run": "off"
-  },
-  "agent": "devops-core:devops",
+  "agent": "morph:morph",
+  "plansDirectory": ".claude/plans",
   "theme": "dark-daltonized"
 }

@@ -16,15 +16,15 @@ One vocabulary for both branches and commit subjects:
 The scope is the thing changed — a module, chart, pipeline, cluster or component — lowercase:
 
 ```
-feat(terraform): add ALB access logs to the shared module
-fix(eks): pin the CNI addon version
-docs(wiki): add a runbook for the Aurora failover
-chore(gitops): bump the shared pipeline templates to v0.3.9
-ci(pipelines): run tflint on pull requests
-refactor(helm): extract the probe block into _helpers.tpl
+feat(auth): add token refresh to the shared client
+fix(api): pin the retry library version
+docs(wiki): add a runbook for the database failover
+chore(deps): bump the shared pipeline templates to v0.3.9
+ci(pipelines): run the linter on pull requests
+refactor(config): extract the probe block into a shared helper
 ```
 
-The same type and scope name the branch: `feat/terraform-alb-access-logs`.
+The same type and scope name the branch: `feat/auth-token-refresh`.
 
 This vocabulary is the team's: apply it even where a repository's own history predates it.
 
@@ -38,7 +38,7 @@ This vocabulary is the team's: apply it even where a repository's own history pr
 ## Commit
 
 - One line, imperative, no trailing period, under 72 characters including the prefix.
-- The subject names the change, not the file: `fix(argocd): stop the app self-healing on drift`, not `fix(argocd): update values.yaml`.
+- The subject names the change, not the file: `fix(sync): stop the job re-running on drift`, not `fix(sync): update config.yaml`.
 - No body, no trailers, no attribution lines, no emoji.
 - Commit as you go. A passing dry-run is the moment; the end of a session is not.
 - Check what the remote holds before `git commit --amend`. Force-push only when the user asks for it.

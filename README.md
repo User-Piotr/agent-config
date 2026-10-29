@@ -1,12 +1,19 @@
 # agent-config
 
-My Claude Code setup in two parts. The **`devops-core` plugin** carries the
-content: a DevOps agent with three subagents, the delivery and learnings skills,
-the learnings loop, and read-only documentation MCP servers. **`claude/`**
-carries the policy a plugin cannot or should not: sandbox, permissions, the
-mutation guards and the global instructions. This repository is also the
-`agent-config` plugin marketplace, so a team extends the setup with a plugin of
-its own instead of a fork.
+My Claude Code setup in three parts. The **`morph` plugin** is the domain-free
+core: an orchestrator agent with three subagents, the delivery and learnings
+skills, the learnings loop and the context7 server. A **domain plugin**
+(`devops` today) adds the knowledge for one field: skills, a documentation
+server, and a short brief injected when a session or subagent starts.
+**`claude/`** carries the policy a plugin cannot or should not: sandbox,
+permissions, the mutation guards and the global instructions. This repository is
+also the `agent-config` plugin marketplace, so a team extends the setup with a
+plugin of its own instead of a fork.
+
+Domain plugins are installed but **off until you switch one on** in `/plugin`.
+The switch is global and applies in every repository. It lands in the tracked
+`claude/settings.json` as a one-line change to `enabledPlugins`: commit it to
+share the choice, or leave it as a local difference.
 
 ## Install
 
@@ -19,58 +26,85 @@ cp .env.example .env    # optional: CONTEXT7_API_KEY
 
 Clone somewhere permanent. `install.sh` symlinks the policy files into
 `~/.claude`, so the clone *is* the installed policy; a clone under `/tmp` leaves
-dangling links after the next reboot. It also installs the plugin from GitHub
-and, when `.env` has a key, stores it as the plugin's context7 option. Restart
-Claude Code after the first install.
+dangling links after the next reboot. It also installs `morph` and `devops` from
+GitHub (`devops` stays off) and, when `.env` has a key, stores it as `morph`'s
+context7 option. Restart Claude Code after the first install, then switch the
+domain plugin on with `/plugin` or `claude plugin enable devops@agent-config`.
 
-### Moving a machine from the pre-plugin layout
+### Migrating from `devops-core`
 
-`git pull` and `./install.sh` do it: the installer removes its old links under
-`~/.claude/{agents,skills,docs,scripts}`, installs the plugin, and drops the
-user-scope `context7` and `awslabs.aws-documentation-mcp-server` registrations
-the plugin replaces. If it stopped halfway, finish by hand:
+`devops-core` was split into `morph` and `devops`. `git pull` and `./install.sh`
+do it: the installer installs both, uninstalls `devops-core@agent-config`, and
+drops the user-scope `context7` and `awslabs.aws-documentation-mcp-server`
+registrations the plugins replace. If it stopped halfway, finish by hand:
 
 ```bash
-find ~/.claude/agents ~/.claude/skills ~/.claude/docs ~/.claude/scripts -xtype l -delete
-claude mcp remove context7 --scope user
-claude mcp remove awslabs.aws-documentation-mcp-server --scope user
-claude plugin install devops-core@agent-config && git checkout claude/settings.json
+claude plugin uninstall devops-core@agent-config
+claude plugin install morph@agent-config
+claude plugin install devops@agent-config
+git checkout claude/settings.json
 ```
 
-Agent memory moves with the new names: `memory: local` keeps a plugin agent's
-notes in `.claude/agent-memory-local/devops-core-<agent>/`. To keep what an
-agent already learned in a repository, rename its directory there, e.g.
-`mv .claude/agent-memory-local/{devops-implementer,devops-core-devops-implementer}`.
+Agents are renamed: `devops-core:devops` is now `morph:morph`,
+`devops-implementer` is `morph:implementer`, `troubleshooter` is
+`morph:investigator`, `devops-reviewer` is `morph:reviewer`. The MCP tool
+prefixes change with the plugin names (`mcp__plugin_morph_context7`,
+`mcp__plugin_devops_aws-documentation`).
 
-### The plugin alone
+Agent memory lives in each repository's working tree, so the installer only
+prints the renames. In every repository that has the old directories:
+
+```bash
+cd .claude/agent-memory-local
+mv devops-core-devops-implementer morph-implementer
+mv devops-core-troubleshooter morph-investigator
+```
+
+A repository's `## DevOps Conventions (agent-maintained)` section in `AGENTS.md`
+keeps its name.
+
+### The plugins alone
 
 Without this repository's policy:
 `/plugin marketplace add User-Piotr/agent-config`, then
-`/plugin install devops-core@agent-config`.
+`/plugin install morph@agent-config` and, for the DevOps knowledge,
+`/plugin install devops@agent-config` and enable it.
 
 ## What's inside
 
 ```
 install.sh                 dispatcher, one directory per agent CLI
 .claude-plugin/            marketplace.json: this repository as the agent-config marketplace
-plugins/devops-core/       the plugin
-  .claude-plugin/          plugin.json: MCP servers, the context7 key option
-  agents/                  devops (main), devops-implementer, troubleshooter, devops-reviewer
+plugins/morph/             the core plugin
+  .claude-plugin/          plugin.json: the context7 server and its key option
+  agents/                  morph (main), implementer, reviewer, investigator
   skills/                  delivery (branch, commit, PR conventions), learnings (the policy)
   hooks/, scripts/         the learnings loop
+plugins/devops/            the DevOps domain plugin (depends on morph, off by default)
+  .claude-plugin/          plugin.json: the aws-documentation server
+  skills/                  terraform, helm, kubernetes, aws, pipelines
+  hooks/, scripts/         brief.sh, run at SessionStart and SubagentStart
 claude/                    policy, linked into ~/.claude
-  install.sh               links policy, installs the plugin
+  install.sh               links policy, installs the plugins
   settings.json            model, sandbox, permissions, guard hooks, enabled plugins
   CLAUDE.md                global instructions; graphify writes its block here
   scripts/                 mutation guards for Bash and MCP
   tests/                   guards.sh, the table the guards are checked against
 ```
 
-Plugin names are prefixed: the agents are `devops-core:devops`,
-`devops-core:troubleshooter` and so on, the skills `devops-core:delivery` and
-`devops-core:learnings`. Every session starts as `devops-core:devops`
-(`"agent"` in `settings.json`). Drop the key for a stock session, or override it
-per repository in `.claude/settings.local.json`.
+Plugin names are prefixed: the agents are `morph:morph`, `morph:investigator`
+and so on, the skills `morph:delivery`, `morph:learnings`, `devops:terraform`.
+Every session starts as `morph:morph` (`"agent"` in `settings.json`). Drop the
+key for a stock session, or override it per repository in
+`.claude/settings.local.json`.
+
+How a domain reaches the agents: `morph` itself knows no tools and no live
+systems. When the session or a subagent starts, the enabled domain plugin's
+`brief.sh` returns a short brief (`hookSpecificOutput.additionalContext`) that
+names its skills, its live-mutation rules and its documentation server. `morph`
+treats the brief as binding and loads the skills it names before working in the
+domain; the skills carry the detail and cost context only when loaded. With
+`devops` off there is no brief and no `devops:*` skill.
 
 Why the split: a plugin can carry agents, skills, hooks and MCP servers, but its
 settings honour only `agent` and `subagentStatusLine`. Sandbox, permissions and
@@ -81,15 +115,16 @@ is one click away from disabled in `/plugin`, and a safety layer must not be.
 
 All three are read-only and on the MCP guard's read-only list:
 
-- **context7** (plugin) — current docs for tools, frameworks and libraries. Its
+- **context7** (`morph`) — current docs for tools, frameworks and libraries. Its
   key is a sensitive plugin option, kept out of settings files and process
-  arguments; set it with `/plugin configure devops-core@agent-config`.
-- **aws-documentation** (plugin) — AWS service docs, quotas and API references.
+  arguments; set it with `/plugin configure morph@agent-config`.
+- **aws-documentation** (`devops`) — AWS service docs, quotas and API
+  references. Present only while `devops` is on.
 - **headroom** (`headroom wrap claude`) — `headroom_compress`,
   `headroom_retrieve` and `headroom_stats`, which pair with the Headroom proxy.
   `wrap` registers it on every run, and serena with it.
 
-A plugin's tools are named `mcp__plugin_devops-core_<server>__<tool>`.
+A plugin's tools are named `mcp__plugin_<plugin>_<server>__<tool>`.
 
 Traffic reaches the Headroom proxy only in sessions started with
 `headroom wrap claude`; a bare `claude` goes straight to the API. `wrap` writes
@@ -100,12 +135,12 @@ dead proxy's address after a crash. Do not run `headroom init` in either form:
 repository's tracked file, and the local form adds hooks and a plugin to the
 project that `wrap` does not need.
 
-`troubleshooter` and `devops-implementer` list what they may not use
+`investigator` and `implementer` list what they may not use
 (`disallowedTools`) instead of what they may, so they inherit the MCP tools of
 any enabled plugin, a team's included. Writes stay covered: both guards
 hard-deny a subagent's live mutations and write-shaped MCP calls, and
-`troubleshooter` also drops serena, whose editing tools the guard trusts.
-`devops-reviewer` keeps a short allowlist.
+`investigator` also drops serena, whose editing tools the guard trusts.
+`reviewer` keeps a short allowlist.
 
 ## Skills
 
@@ -166,12 +201,12 @@ with `git checkout claude/settings.json`.
 
 The plugin is installed from GitHub, so edits under `plugins/` reach a machine
 only after they are merged. To try them first, load the working copy for one
-session: `claude --plugin-dir ./plugins/devops-core`. To test the installer on a
+session: `claude --plugin-dir ./plugins/morph` (add `--plugin-dir ./plugins/devops` for the domain). To test the installer on a
 branch: `AGENT_CONFIG_MARKETPLACE="$PWD" ./install.sh claude`.
 
 The plugin has no `version`, so every commit on `main` is a new version, and the
 marketplace has `autoUpdate` on: a session refreshes it in the background and
-the next session loads the update. `claude plugin update devops-core@agent-config`
+the next session loads the update. `claude plugin update morph@agent-config`
 forces it.
 
 Machine-local state stays out of the repo. `install.sh` adds
@@ -212,15 +247,19 @@ it; mark the entry `— APPLIED` when you do. The review file stays local.
 
 ## Your own plugin
 
-A team adds its own MCP servers, skills or agents as a plugin that depends on
-`devops-core`, in a marketplace of its own (any git host the team can clone
-from). Nothing in this repository changes. Example: Grafana for troubleshooting.
+A team adds its own domain as a plugin that depends on `morph`, in a marketplace
+of its own (any git host the team can clone from). Nothing in this repository
+changes. `devops` is the model to copy: skills for the knowledge, an optional
+MCP server, and two hooks that inject a short brief. Example: Grafana for
+investigation.
 
 ```
 team-plugins/                          the team's marketplace repository
-  .claude-plugin/marketplace.json
+  .claude-plugin/marketplace.json      list the plugin with "defaultEnabled": false
   plugins/team/
     .claude-plugin/plugin.json
+    hooks/hooks.json                   SessionStart and SubagentStart -> scripts/brief.sh
+    scripts/brief.sh
     skills/grafana-triage/SKILL.md
 ```
 
@@ -230,7 +269,7 @@ defines the server:
 ```json
 {
   "name": "team",
-  "dependencies": ["devops-core@agent-config"],
+  "dependencies": ["morph@agent-config"],
   "userConfig": {
     "grafana_url":   { "type": "string", "title": "Grafana URL" },
     "grafana_token": { "type": "string", "title": "Grafana token", "sensitive": true }
@@ -252,15 +291,23 @@ matter for which symptom. Its `description` decides whether it is picked, so nam
 the symptoms — "Use when investigating latency, error rates, pod restarts or
 alerts" — not just the tool.
 
-`troubleshooter` inherits the server's tools and is told to look for a skill
+`brief.sh` is what makes the agents use the skill. Registered for both events in
+`hooks/hooks.json`, it reads `hook_event_name` from stdin and prints
+`{"hookSpecificOutput": {"hookEventName": <event>, "additionalContext": <brief>}}`.
+Keep the brief under about 15 lines: what the domain is, what counts as a live
+system, which skills to load and when ("before any Grafana query load
+`team:grafana-triage`"), and which documentation servers exist. `morph` and its
+subagents treat it as binding. See `plugins/devops/scripts/brief.sh`.
+
+`morph:investigator` inherits the server's tools and is told to look for a skill
 covering the system under investigation. Read-shaped tool names
 (`search_*`, `get_*`, `query_*`, `list_*`) pass the MCP guard; write-shaped ones
 ask in the main session and are denied to subagents. A server that needs to be
 trusted wholesale goes on `READ_ONLY_SERVERS` in the guard, by pull request here.
 
-Each user adds the marketplace and enables the plugin, for example in
-`.claude/settings.json` of the repositories where it applies, or with
-`/plugin marketplace add` and `/plugin install`.
+Each user adds the marketplace and switches the plugin on with
+`/plugin marketplace add`, `/plugin install` and `/plugin`. The switch is
+global: the brief applies in every repository while the plugin is on.
 
 ## Gateway or Bedrock
 

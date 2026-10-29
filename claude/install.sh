@@ -25,7 +25,8 @@ link() {
 step "Linking config"
 # Only policy is linked: the global instructions, the settings, and the two
 # mutation guards. Agents, skills and the learnings loop ship in the
-# devops-core plugin (../plugins/devops-core), installed below.
+# morph plugin (../plugins/morph); the DevOps knowledge in the devops plugin
+# (../plugins/devops). Both are installed below.
 link "$CONF_DIR/CLAUDE.md"                 CLAUDE.md
 link "$CONF_DIR/settings.json"             settings.json
 for f in "$CONF_DIR"/scripts/*.sh; do
@@ -60,8 +61,10 @@ else
   log "caveman plugin not cloned yet — rerun after Claude Code restarts"
 fi
 
-step "devops-core plugin"
-PLUGIN="devops-core@agent-config"
+step "Plugins"
+CORE="morph@agent-config"
+DOMAIN="devops@agent-config"
+OLD="devops-core@agent-config"
 # Override to test a branch before it is on GitHub, e.g. with a local checkout:
 #   AGENT_CONFIG_MARKETPLACE="$PWD" ./install.sh claude
 MARKETPLACE="${AGENT_CONFIG_MARKETPLACE:-User-Piotr/agent-config}"
@@ -82,15 +85,30 @@ restore_settings() {
   [ -L "$CLAUDE_HOME/settings.json" ] || link "$CONF_DIR/settings.json" settings.json
 }
 
-if claude plugin list 2>/dev/null | grep -qF "$PLUGIN"; then
-  log "$PLUGIN present (updates arrive through the marketplace's autoUpdate)"
-else
-  claude plugin marketplace list 2>/dev/null | grep -qw agent-config \
-    || claude plugin marketplace add "$MARKETPLACE" >/dev/null || true
-  if claude plugin install "$PLUGIN" >/dev/null; then
-    log "installed $PLUGIN"
+plugin_present() { claude plugin list 2>/dev/null | grep -qF "$1"; }
+
+claude plugin marketplace list 2>/dev/null | grep -qw agent-config \
+  || claude plugin marketplace add "$MARKETPLACE" >/dev/null || true
+
+# morph is the core team. devops is a domain plugin: it is installed but stays
+# off (defaultEnabled: false in the marketplace, false in settings.json) until
+# it is switched on in /plugin.
+for p in "$CORE" "$DOMAIN"; do
+  if plugin_present "$p"; then
+    log "$p present (updates arrive through the marketplace's autoUpdate)"
+  elif claude plugin install "$p" >/dev/null; then
+    log "installed $p"
   else
-    log "install failed — run: claude plugin install $PLUGIN"
+    log "install failed — run: claude plugin install $p"
+  fi
+done
+
+# The old plugin's agents and skills would run beside morph's.
+if plugin_present "$OLD"; then
+  if claude plugin uninstall "$OLD" >/dev/null; then
+    log "uninstalled $OLD (replaced by $CORE and $DOMAIN)"
+  else
+    log "could not uninstall $OLD — run: claude plugin uninstall $OLD"
   fi
 fi
 
@@ -98,33 +116,41 @@ fi
 # anyone who runs `ps`. A sensitive option is stored outside settings files.
 if [ -n "${CONTEXT7_API_KEY:-}" ]; then
   jq -n --arg k "$CONTEXT7_API_KEY" '{context7_api_key: $k}' \
-    | claude plugin configure "$PLUGIN" --values-stdin >/dev/null \
-    && log "context7 key set" || log "context7 key not set — run /plugin configure $PLUGIN"
+    | claude plugin configure "$CORE" --values-stdin >/dev/null \
+    && log "context7 key set" || log "context7 key not set — run /plugin configure $CORE"
 else
   log "no CONTEXT7_API_KEY in .env — context7 runs unauthenticated (lower rate limit)"
 fi
 
 restore_settings
 rm -f "$SAVED"
-PLUGIN_STATE="$(claude plugin list 2>/dev/null | grep -A4 -F "$PLUGIN" || true)"
+PLUGIN_STATE="$(claude plugin list 2>/dev/null | grep -A4 -F "$CORE" || true)"
 case "$PLUGIN_STATE" in
-  *enabled*) log "$PLUGIN enabled" ;;
-  "")        log "WARNING: $PLUGIN is not installed — agents and skills are missing" ;;
-  *)         log "WARNING: $PLUGIN is installed but not enabled — check /plugin" ;;
+  *enabled*) log "$CORE enabled" ;;
+  "")        log "WARNING: $CORE is not installed — agents and skills are missing" ;;
+  *)         log "WARNING: $CORE is installed but not enabled — check /plugin" ;;
 esac
+log "$DOMAIN is installed but off. Switch it on in /plugin, or: claude plugin enable $DOMAIN"
+log "(that changes one line, enabledPlugins, in claude/settings.json — commit it or leave it)"
 
-# The plugin now provides context7 and aws-documentation. The user-scope copies
+# The plugins now provide context7 and aws-documentation. The user-scope copies
 # earlier versions registered would run beside them (and an identical one hides
 # the plugin's), so they go once the plugin is in place. Matched at line start:
-# the plugin's own entry is listed as plugin:devops-core:context7.
+# a plugin's own entry is listed as plugin:morph:context7.
 INSTALLED=$(claude mcp list 2>/dev/null || true)
-if claude plugin list 2>/dev/null | grep -qF "$PLUGIN"; then
+if plugin_present "$CORE"; then
   for n in context7 awslabs.aws-documentation-mcp-server; do
     if printf '%s\n' "$INSTALLED" | grep -q "^$n:"; then
       claude mcp remove "$n" --scope user >/dev/null && log "removed user-scope MCP $n"
     fi
   done
 fi
+
+# Agent memory lives in each repository's working tree, so it is not moved from
+# here. Name the renames; run them in every repository that has the old paths.
+log "in each repository with .claude/agent-memory-local/devops-core-*, rename:"
+log "  devops-core-devops-implementer -> morph-implementer"
+log "  devops-core-troubleshooter     -> morph-investigator"
 
 step "Global gitignore"
 # Claude Code drops machine-local files next to whatever repository it runs

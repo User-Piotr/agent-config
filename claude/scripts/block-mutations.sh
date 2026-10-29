@@ -2,8 +2,8 @@
 # ~/.claude/scripts/block-mutations.sh
 #
 # PreToolUse hook for the Bash tool. Guards live-environment mutations and
-# forge writes. Referenced by devops.md, devops-implementer.md and
-# troubleshooter.md; tests/guards.sh holds the cases it is checked against —
+# forge writes. Referenced by morph.md, implementer.md and
+# investigator.md; tests/guards.sh holds the cases it is checked against —
 # run it after any change here.
 #
 # Verified 2026-09-23: an "ask" verdict reaches the human even when the
@@ -95,9 +95,9 @@ eval "$FIELDS"
 # outside the list of agents a human drives. The list names the INTERACTIVE
 # agents, so a renamed fork fails closed — an earlier version listed the
 # headless ones, and a fork that renamed them silently lost the deny.
-# "devops-core:devops" is the plugin's name for the same agent; plain "devops"
-# stays until every machine has migrated from the user-scope copy.
-INTERACTIVE_AGENTS=("devops" "devops-core:devops")
+# "morph:morph" is the plugin's name for the main agent; "devops"
+# and "devops-core:devops" stay until every machine has migrated to morph.
+INTERACTIVE_AGENTS=("devops" "devops-core:devops" "morph:morph")
 IS_HEADLESS=false
 if [[ -n "$AGENT_ID" ]]; then
   IS_HEADLESS=true

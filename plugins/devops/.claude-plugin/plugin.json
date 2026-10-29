@@ -1,0 +1,16 @@
+{
+  "name": "devops",
+  "description": "DevOps domain plugin for the morph agent team: Terraform, Helm, Kubernetes, AWS and pipeline skills, the AWS documentation server, and a brief injected when a session or subagent starts",
+  "dependencies": ["morph@agent-config"],
+  "mcpServers": {
+    "aws-documentation": {
+      "command": "uvx",
+      "args": ["awslabs.aws-documentation-mcp-server@latest"],
+      "env": {
+        "FASTMCP_LOG_LEVEL": "ERROR",
+        "AWS_DOCUMENTATION_PARTITION": "aws",
+        "MCP_USER_AGENT": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+      }
+    }
+  }
+}

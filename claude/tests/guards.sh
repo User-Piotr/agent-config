@@ -144,9 +144,11 @@ b deny "sub:devops-implementer"      $'cd infra\nterraform apply -auto-approve'
 b deny "sub:forked-implementer"       "kubectl apply -f x.yaml"
 b deny "sub:general-purpose"         "gh pr create --title x"
 # The plugin's agent names: the main session asks, everything else is headless.
+b ask  "top:morph:morph"                   "git push origin main"
+b deny "sub:morph:investigator"            "kubectl apply -f x.yaml"
+b deny "top:morph:anything-else"           "git push origin main"
+# The old plugin's names are look-alikes now and fail closed.
 b ask  "top:devops-core:devops"            "git push origin main"
-b deny "sub:devops-core:troubleshooter"    "kubectl apply -f x.yaml"
-b deny "top:devops-core:anything-else"     "git push origin main"
 
 # --- Bash: bad input fails closed --------------------------------------------
 check deny "$(printf 'not json' | verdict "$BASH_GUARD")" "bash invalid JSON"
@@ -186,15 +188,17 @@ m ask   ""  mcp__unknown__frobnicate
 m deny  "sub:devops-implementer" mcp__ado__repo_pull_request_write
 m deny  "sub:devops-implementer" mcp__serena__execute_shell_command
 m allow "sub:devops-implementer" mcp__serena__replace_content
-# devops-core's own MCP servers are trusted by exact name; no other plugin's
-# server, and no extension of these names, gets the same pass.
-m allow "sub:devops-core:troubleshooter" mcp__plugin_devops-core_context7__query-docs
-m allow "sub:devops-core:troubleshooter" mcp__plugin_devops-core_aws-documentation__search_documentation
-m ask   ""                               mcp__plugin_other_context7__create_page
-m ask   ""                               mcp__plugin_devops-core_context7_extra__create_page
-m deny  "sub:devops-core:troubleshooter" mcp__plugin_other_context7__create_page
-m ask   "top:devops-core:devops"         mcp__ado__repo_pull_request_write
-m deny  "top:devops-core:anything-else"  mcp__ado__repo_pull_request_write
+# The morph and devops plugins' own MCP servers are trusted by exact name; no
+# other plugin's server, and no extension of these names, gets the same pass.
+m allow "sub:morph:investigator" mcp__plugin_morph_context7__query-docs
+m allow "sub:morph:investigator" mcp__plugin_devops_aws-documentation__search_documentation
+m ask   ""                       mcp__plugin_other_context7__create_page
+m ask   ""                       mcp__plugin_morph_context7_extra__create_page
+m deny  "sub:morph:investigator" mcp__plugin_other_context7__create_page
+# The devops-core servers stay trusted until every machine has migrated to morph.
+m allow ""                       mcp__plugin_devops-core_context7__create_page
+m ask   "top:morph:morph"        mcp__ado__repo_pull_request_write
+m deny  "top:morph:anything-else" mcp__ado__repo_pull_request_write
 
 echo "passed $PASS, failed $FAIL"
 exit "$FAIL"

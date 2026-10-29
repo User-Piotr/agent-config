@@ -1,12 +1,18 @@
 {
   "name": "agent-config",
-  "description": "DevOps agent setup for Claude Code: agents, skills and MCP servers",
+  "description": "Agent setup for Claude Code: a domain-free core team plus domain plugins",
   "owner": { "name": "Piotr Kmiecik" },
   "plugins": [
     {
-      "name": "devops-core",
-      "source": "./plugins/devops-core",
-      "description": "DevOps agent team (devops, devops-implementer, troubleshooter, devops-reviewer), delivery and learnings skills, read-only documentation MCP servers"
+      "name": "morph",
+      "source": "./plugins/morph",
+      "description": "Core agent team (morph, implementer, reviewer, investigator), delivery and learnings skills, context7"
+    },
+    {
+      "name": "devops",
+      "source": "./plugins/devops",
+      "description": "DevOps domain plugin: Terraform, Helm, Kubernetes, AWS and pipeline skills, AWS documentation server, briefs injected at session and subagent start",
+      "defaultEnabled": false
     }
   ]
 }
