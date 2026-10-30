@@ -62,12 +62,13 @@ else
 fi
 
 step "Plugins"
-CORE="morph@agent-config"
-DOMAIN="devops@agent-config"
-OLD="devops-core@agent-config"
+CORE="morph@morph"
+DOMAIN="devops@morph"
 # Override to test a branch before it is on GitHub, e.g. with a local checkout:
-#   AGENT_CONFIG_MARKETPLACE="$PWD" ./install.sh claude
-MARKETPLACE="${AGENT_CONFIG_MARKETPLACE:-User-Piotr/agent-config}"
+#   MORPH_MARKETPLACE="$PWD" ./install.sh claude
+MARKETPLACE="${MORPH_MARKETPLACE:-${AGENT_CONFIG_MARKETPLACE:-User-Piotr/morph}}"
+# Before the rename the marketplace was called agent-config.
+OLD_MARKETPLACE="agent-config"
 
 # `claude plugin marketplace add` and `claude plugin install` at user scope
 # rewrite ~/.claude/settings.json — keys reordered, "opus" turned into
@@ -87,7 +88,18 @@ restore_settings() {
 
 plugin_present() { claude plugin list 2>/dev/null | grep -qF "$1"; }
 
-claude plugin marketplace list 2>/dev/null | grep -qw agent-config \
+# One-time migration from the agent-config marketplace; devops goes first
+# because it depends on morph. Whether devops was on cannot be carried over:
+# settings.json is the repository's file, so the pull that brought this script
+# already replaced the old plugin ids. The message below says how to switch it on.
+if claude plugin marketplace list 2>/dev/null | grep -qw "$OLD_MARKETPLACE"; then
+  for p in "devops@$OLD_MARKETPLACE" "morph@$OLD_MARKETPLACE" "devops-core@$OLD_MARKETPLACE"; do
+    plugin_present "$p" && claude plugin uninstall "$p" >/dev/null && log "uninstalled $p"
+  done
+  claude plugin marketplace remove "$OLD_MARKETPLACE" >/dev/null && log "removed marketplace $OLD_MARKETPLACE (renamed to morph)"
+fi
+
+claude plugin marketplace list 2>/dev/null | grep -qw morph \
   || claude plugin marketplace add "$MARKETPLACE" >/dev/null || true
 
 # morph is the core team. devops is a domain plugin: it is installed but stays
@@ -102,15 +114,6 @@ for p in "$CORE" "$DOMAIN"; do
     log "install failed — run: claude plugin install $p"
   fi
 done
-
-# The old plugin's agents and skills would run beside morph's.
-if plugin_present "$OLD"; then
-  if claude plugin uninstall "$OLD" >/dev/null; then
-    log "uninstalled $OLD (replaced by $CORE and $DOMAIN)"
-  else
-    log "could not uninstall $OLD — run: claude plugin uninstall $OLD"
-  fi
-fi
 
 # The key goes in on stdin, never as an argument: an argument is visible to
 # anyone who runs `ps`. A sensitive option is stored outside settings files.

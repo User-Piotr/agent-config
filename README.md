@@ -1,6 +1,6 @@
 <p align="center"><img src="images/morph.svg" width="200" alt="Morph"></p>
 
-<h1 align="center">agent-config</h1>
+<h1 align="center">morph</h1>
 
 <p align="center">An agent team for Claude Code that plans before it changes anything,<br>
 and learns a domain from the plugins you switch on.</p>
@@ -8,8 +8,8 @@ and learns a domain from the plugins you switch on.</p>
 ## Install
 
 ```bash
-git clone https://github.com/User-Piotr/agent-config.git ~/Repositories/agent-config
-cd ~/Repositories/agent-config
+git clone https://github.com/User-Piotr/morph.git ~/Repositories/morph
+cd ~/Repositories/morph
 cp .env.example .env      # optional: CONTEXT7_API_KEY
 ./install.sh
 ```

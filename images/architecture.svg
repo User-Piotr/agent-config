@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="760" height="330" viewBox="0 0 760 330" role="img" aria-labelledby="t d" font-family="ui-sans-serif, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
-  <title id="t">How agent-config fits together</title>
+  <title id="t">How morph fits together</title>
   <desc id="d">The morph plugin holds the agents. Domain plugins such as devops add skills, MCP servers and a brief injected at session and subagent start. Policy in claude/ wraps everything: sandbox, permissions and mutation guards.</desc>
 
   <defs>
