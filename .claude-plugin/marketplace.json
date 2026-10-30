@@ -1,5 +1,5 @@
 {
-  "name": "agent-config",
+  "name": "morph",
   "description": "Agent setup for Claude Code: a domain-free core team plus domain plugins",
   "owner": { "name": "Piotr Kmiecik" },
   "plugins": [

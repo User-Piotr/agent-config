@@ -131,14 +131,14 @@
   },
   "enabledPlugins": {
     "caveman@caveman": true,
-    "morph@agent-config": true,
-    "devops@agent-config": false
+    "morph@morph": true,
+    "devops@morph": false
   },
   "extraKnownMarketplaces": {
-    "agent-config": {
+    "morph": {
       "source": {
         "source": "github",
-        "repo": "User-Piotr/agent-config"
+        "repo": "User-Piotr/morph"
       },
       "autoUpdate": true
     },

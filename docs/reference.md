@@ -1,4 +1,4 @@
-# agent-config reference
+# morph reference
 
 The full picture behind the [README](../README.md). The setup has three parts. The **`morph` plugin** is the domain-free
 core: an orchestrator agent with three subagents, the delivery and learnings
@@ -7,7 +7,7 @@ skills, the learnings loop and the context7 server. A **domain plugin**
 server, and a short brief injected when a session or subagent starts.
 **`claude/`** carries the policy a plugin cannot or should not: sandbox,
 permissions, the mutation guards and the global instructions. This repository is
-also the `agent-config` plugin marketplace, so a team extends the setup with a
+also the `morph` plugin marketplace, so a team extends the setup with a
 plugin of its own instead of a fork.
 
 Domain plugins are installed but **off until you switch one on** in `/plugin`.
@@ -18,8 +18,8 @@ share the choice, or leave it as a local difference.
 ## Install
 
 ```bash
-git clone https://github.com/User-Piotr/agent-config.git ~/Repositories/agent-config
-cd ~/Repositories/agent-config
+git clone https://github.com/User-Piotr/morph.git ~/Repositories/morph
+cd ~/Repositories/morph
 cp .env.example .env    # optional: CONTEXT7_API_KEY
 ./install.sh
 ```
@@ -29,19 +29,19 @@ Clone somewhere permanent. `install.sh` symlinks the policy files into
 dangling links after the next reboot. It also installs `morph` and `devops` from
 GitHub (`devops` stays off) and, when `.env` has a key, stores it as `morph`'s
 context7 option. Restart Claude Code after the first install, then switch the
-domain plugin on with `/plugin` or `claude plugin enable devops@agent-config`.
+domain plugin on with `/plugin` or `claude plugin enable devops@morph`.
 
 ### Migrating from `devops-core`
 
 `devops-core` was split into `morph` and `devops`. `git pull` and `./install.sh`
-do it: the installer installs both, uninstalls `devops-core@agent-config`, and
+do it: the installer installs both, uninstalls `devops-core@morph`, and
 drops the user-scope `context7` and `awslabs.aws-documentation-mcp-server`
 registrations the plugins replace. If it stopped halfway, finish by hand:
 
 ```bash
-claude plugin uninstall devops-core@agent-config
-claude plugin install morph@agent-config
-claude plugin install devops@agent-config
+claude plugin uninstall devops-core@morph
+claude plugin install morph@morph
+claude plugin install devops@morph
 git checkout claude/settings.json
 ```
 
@@ -66,15 +66,15 @@ keeps its name.
 ### The plugins alone
 
 Without this repository's policy:
-`/plugin marketplace add User-Piotr/agent-config`, then
-`/plugin install morph@agent-config` and, for the DevOps knowledge,
-`/plugin install devops@agent-config` and enable it.
+`/plugin marketplace add User-Piotr/morph`, then
+`/plugin install morph@morph` and, for the DevOps knowledge,
+`/plugin install devops@morph` and enable it.
 
 ## What's inside
 
 ```
 install.sh                 dispatcher, one directory per agent CLI
-.claude-plugin/            marketplace.json: this repository as the agent-config marketplace
+.claude-plugin/            marketplace.json: this repository as the morph marketplace
 plugins/morph/             the core plugin
   .claude-plugin/          plugin.json: the context7 server and its key option
   agents/                  morph (main), implementer, reviewer, investigator
@@ -117,7 +117,7 @@ All three are read-only and on the MCP guard's read-only list:
 
 - **context7** (`morph`) — current docs for tools, frameworks and libraries. Its
   key is a sensitive plugin option, kept out of settings files and process
-  arguments; set it with `/plugin configure morph@agent-config`.
+  arguments; set it with `/plugin configure morph@morph`.
 - **aws-documentation** (`devops`) — AWS service docs, quotas and API
   references. Present only while `devops` is on.
 - **headroom** (`headroom wrap claude`) — `headroom_compress`,
@@ -202,11 +202,11 @@ with `git checkout claude/settings.json`.
 The plugin is installed from GitHub, so edits under `plugins/` reach a machine
 only after they are merged. To try them first, load the working copy for one
 session: `claude --plugin-dir ./plugins/morph` (add `--plugin-dir ./plugins/devops` for the domain). To test the installer on a
-branch: `AGENT_CONFIG_MARKETPLACE="$PWD" ./install.sh claude`.
+branch: `MORPH_MARKETPLACE="$PWD" ./install.sh claude`.
 
 The plugin has no `version`, so every commit on `main` is a new version, and the
 marketplace has `autoUpdate` on: a session refreshes it in the background and
-the next session loads the update. `claude plugin update morph@agent-config`
+the next session loads the update. `claude plugin update morph@morph`
 forces it.
 
 Machine-local state stays out of the repo. `install.sh` adds
@@ -280,7 +280,7 @@ defines the server:
 ```json
 {
   "name": "team",
-  "dependencies": ["morph@agent-config"],
+  "dependencies": ["morph@morph"],
   "userConfig": {
     "grafana_url":   { "type": "string", "title": "Grafana URL" },
     "grafana_token": { "type": "string", "title": "Grafana token", "sensitive": true }

@@ -1,7 +1,7 @@
 {
   "name": "devops",
   "description": "DevOps domain plugin for the morph agent team: Terraform, Helm, Kubernetes, AWS and pipeline skills, the AWS documentation server, and a brief injected when a session or subagent starts",
-  "dependencies": ["morph@agent-config"],
+  "dependencies": ["morph@morph"],
   "mcpServers": {
     "aws-documentation": {
       "command": "uvx",
