@@ -132,7 +132,7 @@
   "enabledPlugins": {
     "caveman@caveman": true,
     "morph@morph": true,
-    "devops@morph": false
+    "devops@morph": true
   },
   "extraKnownMarketplaces": {
     "morph": {

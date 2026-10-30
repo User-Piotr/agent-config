@@ -10,7 +10,8 @@ permissions, the mutation guards and the global instructions. This repository is
 also the `morph` plugin marketplace, so a team extends the setup with a
 plugin of its own instead of a fork.
 
-Domain plugins are installed but **off until you switch one on** in `/plugin`.
+Domain plugins are off by default in the marketplace; this repository's
+`settings.json` switches `devops` on. Switch any of them in `/plugin`.
 The switch is global and applies in every repository. It lands in the tracked
 `claude/settings.json` as a one-line change to `enabledPlugins`: commit it to
 share the choice, or leave it as a local difference.

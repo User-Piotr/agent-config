@@ -16,10 +16,10 @@ cp .env.example .env      # optional: CONTEXT7_API_KEY
 
 Restart Claude Code. Sessions start as **Morph**, the core agent.
 
-Domain knowledge comes from plugins that are installed but off. Switch one on in
-`/plugin` — `devops` for Terraform, Helm, Kubernetes and AWS — and it applies in
-every repository, to Morph or any other agent. Switching it on changes one line
-in `claude/settings.json`; commit that line to make it the default.
+Domain knowledge comes from plugins. `devops` (Terraform, Helm, Kubernetes,
+AWS) is on; switch domains on or off in `/plugin`. A domain applies in every
+repository, to Morph or any other agent. A switch changes one line in
+`claude/settings.json`; commit it to make it the default.
 
 ## What you get
 

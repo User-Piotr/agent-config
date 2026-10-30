@@ -102,9 +102,8 @@ fi
 claude plugin marketplace list 2>/dev/null | grep -qw morph \
   || claude plugin marketplace add "$MARKETPLACE" >/dev/null || true
 
-# morph is the core team. devops is a domain plugin: it is installed but stays
-# off (defaultEnabled: false in the marketplace, false in settings.json) until
-# it is switched on in /plugin.
+# morph is the core team. devops is a domain plugin: off by default in the
+# marketplace (defaultEnabled: false), switched on here by settings.json.
 for p in "$CORE" "$DOMAIN"; do
   if plugin_present "$p"; then
     log "$p present (updates arrive through the marketplace's autoUpdate)"
@@ -133,8 +132,11 @@ case "$PLUGIN_STATE" in
   "")        log "WARNING: $CORE is not installed — agents and skills are missing" ;;
   *)         log "WARNING: $CORE is installed but not enabled — check /plugin" ;;
 esac
-log "$DOMAIN is installed but off. Switch it on in /plugin, or: claude plugin enable $DOMAIN"
-log "(that changes one line, enabledPlugins, in claude/settings.json — commit it or leave it)"
+case "$(claude plugin list 2>/dev/null | grep -A4 -F "$DOMAIN" || true)" in
+  *"Status: ✔"*) log "$DOMAIN enabled — switch it off in /plugin if you do not need it" ;;
+  *)             log "$DOMAIN is installed but off. Switch it on in /plugin, or: claude plugin enable $DOMAIN" ;;
+esac
+log "(switching a plugin changes one line, enabledPlugins, in claude/settings.json — commit it or leave it)"
 
 # The plugins now provide context7 and aws-documentation. The user-scope copies
 # earlier versions registered would run beside them (and an identical one hides
